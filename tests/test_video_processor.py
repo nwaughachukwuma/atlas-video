@@ -4,8 +4,8 @@ Unit tests for atlas.video_processor module
 
 import pytest
 
-from atlas.utils import VideoAttrAnalysis
-from atlas.video_processor import (
+from src.atlas.utils import VideoAttrAnalysis
+from src.atlas.video_processor import (
     VideoDescription,
     VideoProcessor,
     VideoProcessorConfig,

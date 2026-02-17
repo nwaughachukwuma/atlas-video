@@ -2,13 +2,13 @@
 Unit tests for atlas.prompts module
 """
 
-from atlas.prompts import (
+from src.atlas.prompts import (
     VideoPrompt,
     summarize_descriptions_prompt,
     video_analysis_prompts,
     video_system_prompt,
 )
-from atlas.utils import DescriptionAttr
+from src.atlas.utils import DescriptionAttr
 
 
 class TestVideoPrompt:

@@ -2,13 +2,13 @@
 Unit tests for atlas.vector_store module
 """
 
-from atlas.utils import VideoAttrAnalysis
-from atlas.vector_store import (
+from src.atlas.utils import VideoAttrAnalysis
+from src.atlas.vector_store import (
     IndexDocument,
     SearchResult,
     VectorStore,
 )
-from atlas.video_processor import VideoDescription
+from src.atlas.video_processor import VideoDescription
 
 
 class TestIndexDocument:

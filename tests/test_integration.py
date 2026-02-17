@@ -6,14 +6,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from atlas.utils import VideoAttrAnalysis
-from atlas.vector_store import VectorStore
-from atlas.video_processor import VideoDescription, VideoProcessorResult
-from atlas.video_processor import VideoProcessor, VideoProcessorConfig
-from atlas.video_processor import VideoProcessor, VideoProcessorConfig
-from atlas.cli import parse_duration
-from atlas.cli import validate_video_path
-from atlas.cli import main
+from src.atlas.utils import VideoAttrAnalysis
+from src.atlas.vector_store import VectorStore
+from src.atlas.video_processor import VideoDescription, VideoProcessorResult
+from src.atlas.video_processor import VideoProcessor, VideoProcessorConfig
+from src.atlas.video_processor import VideoProcessor, VideoProcessorConfig
+from src.atlas.cli import parse_duration
+from src.atlas.cli import validate_video_path
+from src.atlas.cli import main
 
 
 class TestVectorStoreIntegration:

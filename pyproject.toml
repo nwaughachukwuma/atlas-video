@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "A multimodal insights engine for video understanding"
 readme = "README.md"
 license = "Apache-2.0"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 authors = [
     { name = "VeedoAI", email = "hello@veedoai.com" }
 ]
@@ -87,8 +87,5 @@ quote-style = "double"
 indent-style = "space"
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.12"
 strict = true
-
-[tool.pytest.ini_options]
-asyncio_mode = "auto"

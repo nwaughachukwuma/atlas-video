@@ -14,8 +14,7 @@ from rich.console import Console
 from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
 from rich.table import Table
 
-from atlas import __version__
-
+from . import __version__
 from .utils import DEFAULT_DESCRIPTION_ATTRS, DescriptionAttr, TempPath, logger
 
 console = Console()

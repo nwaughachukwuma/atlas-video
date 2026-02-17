@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import pytest
 
-from atlas.utils import (
+from src.atlas.utils import (
     ChunkSlot,
     MediaChunk,
     MediaFileManager,
