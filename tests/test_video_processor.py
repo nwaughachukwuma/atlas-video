@@ -2,10 +2,12 @@
 Unit tests for atlas.video_processor module
 """
 
+from unittest.mock import patch
+
 import pytest
 
-from src.atlas.utils import VideoAttrAnalysis
-from src.atlas.video_processor import (
+from atlas.utils import VideoAttrAnalysis
+from atlas.video_processor import (
     VideoDescription,
     VideoProcessor,
     VideoProcessorConfig,
@@ -87,26 +89,34 @@ class TestVideoProcessorResult:
 class TestVideoProcessor:
     """Tests for VideoProcessor class"""
 
-    def test_initialization(self, tmp_path):
+    def test_initialization(self, tmp_path, monkeypatch):
         """Test VideoProcessor initialization"""
         video_path = tmp_path / "test_video.mp4"
         video_path.touch()
 
-        config = VideoProcessorConfig(video_path=str(video_path))
-        processor = VideoProcessor(config)
+        # Mock Gemini client to avoid API key requirement
+        monkeypatch.setenv("GEMINI_API_KEY", "test-api-key")
 
-        assert processor.video_path == str(video_path)
-        assert processor.chunk_duration == 10
-        assert processor.overlap == 0
+        with patch("atlas.gemini_client.GeminiClient.get_client"):
+            config = VideoProcessorConfig(video_path=str(video_path))
+            processor = VideoProcessor(config)
+
+            assert processor.video_path == str(video_path)
+            assert processor.chunk_duration == 10
+            assert processor.overlap == 0
 
     @pytest.mark.asyncio
-    async def test_context_manager(self, tmp_path):
+    async def test_context_manager(self, tmp_path, monkeypatch):
         """Test VideoProcessor as context manager"""
         video_path = tmp_path / "test_video.mp4"
         video_path.touch()
 
-        config = VideoProcessorConfig(video_path=str(video_path))
+        # Mock Gemini client to avoid API key requirement
+        monkeypatch.setenv("GEMINI_API_KEY", "test-api-key")
 
-        async with VideoProcessor(config) as processor:
-            assert processor is not None
-            assert processor.video_path == str(video_path)
+        with patch("atlas.gemini_client.GeminiClient.get_client"):
+            config = VideoProcessorConfig(video_path=str(video_path))
+
+            async with VideoProcessor(config) as processor:
+                assert processor is not None
+                assert processor.video_path == str(video_path)

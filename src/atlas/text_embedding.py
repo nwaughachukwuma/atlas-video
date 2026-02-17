@@ -19,10 +19,8 @@ class TextEmbedding:
 
     def get_embedding(self, dimensionality: int = 768) -> list[float]:
         """Get text embedding using Gemini embedding model
-
         Args:
             dimensionality: Output dimension (768 or 3072 for gemini-embedding-001)
-
         Returns:
             List of embedding values
         """
@@ -46,25 +44,20 @@ class TextEmbedding:
 
     async def get_embedding_async(self, dimensionality: int = 768) -> list[float]:
         """Get text embedding asynchronously"""
-
         return await asyncio.to_thread(self.get_embedding, dimensionality)
 
 
 def embed_text(content: str, dimensionality: int = 768) -> list[float]:
     """Convenience function to get text embedding
-
     Args:
         content: Text content to embed
         dimensionality: Output dimension (768 or 3072)
-
     Returns:
         List of embedding values
     """
-    embedder = TextEmbedding(content)
-    return embedder.get_embedding(dimensionality)
+    return TextEmbedding(content).get_embedding(dimensionality)
 
 
 async def embed_text_async(content: str, dimensionality: int = 768) -> list[float]:
     """Convenience function to get text embedding asynchronously"""
-    embedder = TextEmbedding(content)
-    return await embedder.get_embedding_async(dimensionality)
+    return await TextEmbedding(content).get_embedding_async(dimensionality)

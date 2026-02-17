@@ -41,7 +41,7 @@ def process_time():
                 response = await func(*args, **kwargs)
 
                 time_diff = f"{(time() - start_time):.2f}s"
-                logger.info(f"Execution time for {func.__name__}: {time_diff}")
+                logger.info(f"{func.__name__} completed in {time_diff}")
 
                 return response
 
@@ -53,7 +53,7 @@ def process_time():
             response = func(*args, **kwargs)
 
             time_diff = f"{(time() - start_time):.2f}s"
-            logger.info(f"Execution time for {func.__name__}: {time_diff}")
+            logger.info(f"{func.__name__} completed in {time_diff}")
 
             return response
 
@@ -66,7 +66,7 @@ def process_time():
 class RetryConfig:
     max_retries: int = 3
     delay: float = 1.0
-    backoff: Optional[float] = None
+    backoff: float = 2.0
 
 
 def retry(retry_config: RetryConfig | None, default_return: Any = None):

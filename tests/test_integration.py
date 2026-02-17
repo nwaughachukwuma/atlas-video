@@ -2,18 +2,18 @@
 Integration tests for Atlas - testing component interactions
 """
 
+import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
-
-from src.atlas.utils import VideoAttrAnalysis
-from src.atlas.vector_store import VectorStore
-from src.atlas.video_processor import VideoDescription, VideoProcessorResult
-from src.atlas.video_processor import VideoProcessor, VideoProcessorConfig
-from src.atlas.video_processor import VideoProcessor, VideoProcessorConfig
-from src.atlas.cli import parse_duration
-from src.atlas.cli import validate_video_path
-from src.atlas.cli import main
+from atlas.utils import VideoAttrAnalysis
+from atlas.vector_store import VectorStore
+from atlas.video_processor import (
+    VideoDescription,
+    VideoProcessor,
+    VideoProcessorConfig,
+    VideoProcessorResult,
+)
+from atlas.vector_store import SearchResult
 
 
 class TestVectorStoreIntegration:
@@ -48,25 +48,35 @@ class TestVectorStoreIntegration:
         assert not temp_store_path.exists()  # Not created until first use
 
     @pytest.mark.asyncio
-    async def test_index_and_search_flow(self, temp_store_path, sample_video_result):
+    async def test_index_and_search_flow(self, temp_store_path, sample_video_result: VideoProcessorResult, monkeypatch):
         """Test the full index and search flow"""
-        store = VectorStore(store_path=str(temp_store_path))
+        monkeypatch.setenv("GEMINI_API_KEY", "test-api-key")
 
-        # Mock the embedding function
+        store = VectorStore(store_path=str(temp_store_path))
+        # Mock the embedding function - patch where it's used, not where it's defined
         mock_embedding = [0.1] * 768
 
         with patch("atlas.vector_store.embed_text_async", new_callable=AsyncMock) as mock_embed:
             mock_embed.return_value = mock_embedding
-
             # Index the result
             indexed = await store.index_video_result(sample_video_result)
             assert indexed > 0
-
-            # Search should return results
+            # Search should return results - mock returns sample results
             with patch.object(store, "search", new_callable=AsyncMock) as mock_search:
-                mock_search.return_value = []
-                _ = await store.search("person walking", top_k=5)
-                # Results depend on zvec implementation
+                mock_search.return_value = [
+                    SearchResult(
+                        id="test_id",
+                        score=0.9,
+                        video_path="/tmp/test_video.mp4",
+                        start=0.0,
+                        end=10.0,
+                        content="test content",
+                        metadata={"attr": "visual_cues", "duration": 10.0},
+                    )
+                ]
+                results = await store.search("person walking", top_k=5)
+                assert len(results) > 0
+                assert results[0].score == 0.9
 
 
 class TestVideoProcessorIntegration:
@@ -80,8 +90,9 @@ class TestVideoProcessorIntegration:
         return str(video_path)
 
     @pytest.mark.asyncio
-    async def test_processor_config_flow(self, sample_video_path):
+    async def test_processor_config_flow(self, sample_video_path, monkeypatch):
         """Test VideoProcessor with configuration"""
+        monkeypatch.setenv("GEMINI_API_KEY", "test-api-key")
 
         config = VideoProcessorConfig(
             video_path=sample_video_path,
@@ -91,7 +102,7 @@ class TestVideoProcessorIntegration:
         )
 
         # Mock the duration probing
-        with patch.object(VideoProcessor, "_probe_media"):
+        with patch("atlas.gemini_client.GeminiClient.get_client"):
             processor = VideoProcessor(config)
             processor._duration = 10.0
 
@@ -99,8 +110,9 @@ class TestVideoProcessorIntegration:
             assert processor.overlap == 1
 
     @pytest.mark.asyncio
-    async def test_chunk_slicing_with_overlap(self, sample_video_path):
+    async def test_chunk_slicing_with_overlap(self, sample_video_path, monkeypatch):
         """Test that chunk slicing works with overlap"""
+        monkeypatch.setenv("GEMINI_API_KEY", "test-api-key")
 
         config = VideoProcessorConfig(
             video_path=sample_video_path,
@@ -108,7 +120,7 @@ class TestVideoProcessorIntegration:
             overlap=1,
         )
 
-        with patch.object(VideoProcessor, "_probe_media"):
+        with patch("atlas.gemini_client.GeminiClient.get_client"):
             processor = VideoProcessor(config)
             processor._duration = 15.0
 
@@ -123,20 +135,24 @@ class TestCLIIntegration:
 
     def test_cli_import(self):
         """Test that CLI module can be imported"""
+        from atlas.cli import main
 
         assert callable(main)
 
     def test_cli_parse_duration(self):
         """Test CLI duration parsing"""
+        from atlas.cli import parse_duration
 
         assert parse_duration("15s") == 15
         assert parse_duration("1m") == 60
-        assert parse_duration("1m30s") == 90  # This would need custom parsing
+        assert parse_duration("1m30s") == 90
         assert parse_duration("1h") == 3600
         assert parse_duration("30") == 30
+        assert parse_duration("1h30m15s") == 5415
 
     def test_cli_validate_video_path(self, tmp_path):
         """Test CLI video path validation"""
+        from atlas.cli import validate_video_path
 
         # Valid path
         video_path = tmp_path / "test.mp4"
@@ -180,7 +196,7 @@ class TestEndToEnd:
             # This would work with actual mocking
             # result = await extract_transcript(sample_video)
 
-    def test_package_imports(self):
+    def test_package_imports(self, mock_env_vars):
         """Test that all package imports work correctly"""
         # Main package
         import atlas

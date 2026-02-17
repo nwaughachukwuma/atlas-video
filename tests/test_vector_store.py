@@ -95,14 +95,10 @@ class TestVectorStore:
         assert store.embedding_dim == 3072
         assert store.store_path == custom_path
 
-    def test_create_document_id(self, tmp_path):
+    def test_doc_id(self):
         """Test document ID creation"""
         store = VectorStore()
-        doc_id = store._create_document_id("/tmp/video.mp4", 0.0, 10.0, "visual_cues")
-        assert len(doc_id) == 16
-        # Same inputs should produce same ID
-        doc_id2 = store._create_document_id("/tmp/video.mp4", 0.0, 10.0, "visual_cues")
-        assert doc_id == doc_id2
+        assert len(store._doc_id()) == 16
 
     def test_create_searchable_content(self):
         """Test searchable content creation"""

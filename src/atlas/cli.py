@@ -40,22 +40,47 @@ def parse_duration(duration_str: str) -> int:
         '15s' -> 15
         '1m' -> 60
         '1m30s' -> 90
+        '1h30m15s' -> 5415
     """
     duration_str = duration_str.strip().lower()
 
-    if duration_str.endswith("s"):
-        return int(duration_str[:-1])
-    elif duration_str.endswith("m"):
-        return int(duration_str[:-1]) * 60
-    elif duration_str.endswith("h"):
-        return int(duration_str[:-1]) * 3600
-    else:
-        try:
-            return int(duration_str)
-        except ValueError:
-            console.print(f"[red]Invalid duration format: {duration_str}[/red]")
-            console.print("Use format like: 15s, 1m, 1m30s")
-            sys.exit(1)
+    # Try parsing as a simple number first
+    try:
+        return int(duration_str)
+    except ValueError:
+        pass
+
+    # Parse complex duration strings like "1h30m15s", "1m30s", etc.
+    total_seconds = 0
+    current_value = ""
+
+    for char in duration_str:
+        if char.isdigit():
+            current_value += char
+        elif char == "h":
+            if current_value:
+                total_seconds += int(current_value) * 3600
+                current_value = ""
+        elif char == "m":
+            if current_value:
+                total_seconds += int(current_value) * 60
+                current_value = ""
+        elif char == "s":
+            if current_value:
+                total_seconds += int(current_value)
+                current_value = ""
+        # Skip any other characters
+
+    if current_value:
+        # If there's a remaining number without unit, treat it as seconds
+        total_seconds += int(current_value)
+
+    if total_seconds == 0 and duration_str:
+        console.print(f"[red]Invalid duration format: {duration_str}[/red]")
+        console.print("Use format like: 15s, 1m, 1m30s")
+        sys.exit(1)
+
+    return total_seconds
 
 
 def validate_video_path(video_path: str) -> Path:

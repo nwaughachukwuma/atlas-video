@@ -57,7 +57,6 @@ def temp_store_path(tmp_path):
 @pytest.fixture
 def sample_video_attr_analysis():
     """Create sample VideoAttrAnalysis objects"""
-
     return [
         VideoAttrAnalysis(attr="visual_cues", value="A person walking in a park"),
         VideoAttrAnalysis(attr="audio_analysis", value="Birds chirping in background"),
