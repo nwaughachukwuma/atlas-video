@@ -3,8 +3,6 @@ Video processor for multimodal analysis
 """
 
 import asyncio
-import subprocess
-from pathlib import Path
 from typing import Optional
 
 from pydantic import BaseModel
@@ -13,18 +11,18 @@ from atlas.gemini_client import GeminiMediaEngine
 from atlas.prompts import VideoPrompt, video_analysis_prompts, video_system_prompt
 from atlas.transcript import ProcessTranscript
 from atlas.utils import (
-    ChunkSlot,
     DEFAULT_DESCRIPTION_ATTRS,
+    ChunkSlot,
     DescriptionAttr,
     MediaChunk,
     MediaFileManager,
+    RetryConfig,
     TempPath,
     VideoAttrAnalysis,
     delete_tmp_files,
     logger,
     process_time,
     retry,
-    RetryConfig,
 )
 
 
@@ -147,9 +145,7 @@ class VideoProcessor(MediaFileManager, GeminiMediaEngine):
         async with ProcessTranscript(self.video_path, return_value="text") as processor:
             return await processor.process()
 
-    async def _analyze_video_content(
-        self, file_part, file_path: str
-    ) -> list[VideoAttrAnalysis]:
+    async def _analyze_video_content(self, file_part, file_path: str) -> list[VideoAttrAnalysis]:
         """Analyze video content and extract features"""
 
         async def handler(video_prompt: VideoPrompt) -> VideoAttrAnalysis:
@@ -171,11 +167,7 @@ class VideoProcessor(MediaFileManager, GeminiMediaEngine):
             return VideoAttrAnalysis(value=description, attr=video_prompt.attr)
 
         return await asyncio.gather(
-            *[
-                handler(v)
-                for v in video_analysis_prompts
-                if v.attr in self.description_attrs
-            ],
+            *[handler(v) for v in video_analysis_prompts if v.attr in self.description_attrs],
         )
 
     @process_time()

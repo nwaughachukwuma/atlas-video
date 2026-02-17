@@ -2,8 +2,6 @@
 Vector store using zvec for local vector search
 """
 
-import json
-import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
@@ -11,7 +9,7 @@ from typing import Any, Optional
 import zvec
 from pydantic import BaseModel
 
-from atlas.text_embedding import TextEmbedding, embed_text_async
+from atlas.text_embedding import embed_text_async
 from atlas.utils import logger
 from atlas.video_processor import VideoDescription, VideoProcessorResult
 

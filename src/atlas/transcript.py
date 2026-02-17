@@ -11,12 +11,12 @@ from atlas.utils import (
     ChunkSlot,
     MediaChunk,
     MediaFileManager,
+    RetryConfig,
     TempPath,
     delete_tmp_files,
     logger,
     process_time,
     retry,
-    RetryConfig,
     to_sexagesimal,
 )
 

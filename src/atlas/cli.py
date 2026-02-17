@@ -11,12 +11,11 @@ from typing import Optional
 
 import click
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
+from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
 from rich.table import Table
-from rich import print as rprint
 
 from atlas import __version__
-from atlas.utils import logger, TempPath, DescriptionAttr, DEFAULT_DESCRIPTION_ATTRS
+from atlas.utils import DEFAULT_DESCRIPTION_ATTRS, DescriptionAttr, TempPath, logger
 
 console = Console()
 
@@ -228,7 +227,7 @@ def index(
     console.print(f"[dim]Chunk duration: {chunk_sec}s, Overlap: {overlap_sec}s[/dim]")
 
     async def run_index():
-        from atlas.vector_store import VectorStore, index_video
+        from atlas.vector_store import index_video
 
         with Progress(
             SpinnerColumn(),
@@ -253,7 +252,7 @@ def index(
     try:
         indexed_count, result = asyncio.run(run_index())
 
-        console.print(f"\n[bold green]Indexing complete![/bold green]")
+        console.print("\n[bold green]Indexing complete![/bold green]")
         console.print(f"  Video: {video_path}")
         console.print(f"  Duration: {result.duration:.2f}s")
         console.print(f"  Segments processed: {len(result.video_descriptions)}")
@@ -262,7 +261,7 @@ def index(
         if store_path:
             console.print(f"  Index location: {store_path}")
         else:
-            console.print(f"  Index location: ~/.atlas/index")
+            console.print("  Index location: ~/.atlas/index")
 
     except Exception as e:
         console.print(f"[red]Error indexing video: {e}[/red]")
@@ -318,7 +317,11 @@ def search(query: str, top_k: int, video: Optional[str], store_path: Optional[st
         for i, result in enumerate(results, 1):
             time_str = f"{result.start:.1f}s - {result.end:.1f}s"
             content = result.content[:47] + "..." if len(result.content) > 50 else result.content
-            video_name = Path(result.video_path).name[:27] + "..." if len(result.video_path) > 30 else Path(result.video_path).name
+            video_name = (
+                Path(result.video_path).name[:27] + "..."
+                if len(result.video_path) > 30
+                else Path(result.video_path).name
+            )
 
             table.add_row(
                 str(i),
