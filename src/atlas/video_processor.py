@@ -7,10 +7,10 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from atlas.gemini_client import GeminiMediaEngine
-from atlas.prompts import VideoPrompt, video_analysis_prompts, video_system_prompt
-from atlas.transcript import ProcessTranscript
-from atlas.utils import (
+from .gemini_client import GeminiMediaEngine
+from .prompts import VideoPrompt, video_analysis_prompts, video_system_prompt
+from .transcript import ProcessTranscript
+from .utils import (
     DEFAULT_DESCRIPTION_ATTRS,
     ChunkSlot,
     DescriptionAttr,
@@ -152,7 +152,7 @@ class VideoProcessor(MediaFileManager, GeminiMediaEngine):
             try:
                 if video_prompt.attr == "transcript":
                     # Use local transcription via Groq
-                    from atlas.transcript import ProcessTranscript
+                    from .transcript import ProcessTranscript
 
                     async with ProcessTranscript(file_path, return_value="text") as proc:
                         description = await proc.process()

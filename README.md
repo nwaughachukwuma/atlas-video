@@ -119,6 +119,7 @@ Options:
 ```
 
 Available attributes:
+
 - `visual_cues`: Visual elements, entities, and their attributes
 - `interactions`: Movements, gestures, dynamics between entities
 - `contextual_information`: Production elements, setting, atmosphere
@@ -187,17 +188,17 @@ async def main():
         chunk_duration=15,
         overlap=1,
     )
-    
+
     async with VideoProcessor(config) as processor:
         result = await processor.process()
-    
+
     print(f"Processed {len(result.video_descriptions)} segments")
-    
+
     # Index for search
     store = VectorStore()
     indexed = await store.index_video_result(result)
     print(f"Indexed {indexed} documents")
-    
+
     # Search
     results = await store.search("people discussing AI", top_k=5)
     for r in results:
@@ -209,7 +210,7 @@ asyncio.run(main())
 ### Transcription Only
 
 ```python
-from atlas.video_processor import extract_transcript
+from .video_processor import extract_transcript
 import asyncio
 
 async def get_transcript():
@@ -222,7 +223,7 @@ asyncio.run(get_transcript())
 ### Text Embeddings
 
 ```python
-from atlas.text_embedding import TextEmbedding, embed_text
+from .text_embedding import TextEmbedding, embed_text
 
 # Get embedding for text
 embedding = embed_text("Hello, world!")
@@ -237,10 +238,10 @@ embedding = embedder.get_embedding(dimensionality=768)
 
 ### Environment Variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `GEMINI_API_KEY` | Yes | Google Gemini API key for video analysis and embeddings |
-| `GROQ_API_KEY` | For transcription | Groq API key for Whisper transcription |
+| Variable         | Required          | Description                                             |
+| ---------------- | ----------------- | ------------------------------------------------------- |
+| `GEMINI_API_KEY` | Yes               | Google Gemini API key for video analysis and embeddings |
+| `GROQ_API_KEY`   | For transcription | Groq API key for Whisper transcription                  |
 
 ### Vector Store Location
 

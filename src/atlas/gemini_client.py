@@ -9,7 +9,7 @@ from typing import Optional
 from google import genai
 from google.genai import types
 
-from atlas.utils import RetryConfig, logger, process_time, retry
+from .utils import RetryConfig, logger, process_time, retry
 
 
 class GeminiClient:

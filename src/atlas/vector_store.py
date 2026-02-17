@@ -9,9 +9,9 @@ from typing import Any, Optional
 import zvec
 from pydantic import BaseModel
 
-from atlas.text_embedding import embed_text_async
-from atlas.utils import logger
-from atlas.video_processor import VideoDescription, VideoProcessorResult
+from .text_embedding import embed_text_async
+from .utils import logger
+from .video_processor import VideoDescription, VideoProcessorResult
 
 
 class IndexDocument(BaseModel):
@@ -305,7 +305,7 @@ async def index_video(
     Returns:
         Tuple of (number of documents indexed, processing result)
     """
-    from atlas.video_processor import VideoProcessor, VideoProcessorConfig
+    from .video_processor import VideoProcessor, VideoProcessorConfig
 
     config = VideoProcessorConfig(
         video_path=video_path,

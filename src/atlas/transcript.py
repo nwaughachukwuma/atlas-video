@@ -7,7 +7,7 @@ from typing import Literal, TypedDict
 
 from groq import Groq
 
-from atlas.utils import (
+from .utils import (
     ChunkSlot,
     MediaChunk,
     MediaFileManager,

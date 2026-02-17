@@ -8,7 +8,7 @@ from typing import Optional
 from google import genai
 from google.genai import types
 
-from atlas.utils import logger
+from .utils import logger
 
 
 class TextEmbedding:

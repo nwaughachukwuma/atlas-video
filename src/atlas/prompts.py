@@ -4,7 +4,7 @@ Prompts for video analysis
 
 from dataclasses import dataclass
 
-from atlas.utils import DescriptionAttr
+from .utils import DescriptionAttr
 
 
 @dataclass

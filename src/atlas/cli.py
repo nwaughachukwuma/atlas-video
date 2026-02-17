@@ -15,7 +15,8 @@ from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn
 from rich.table import Table
 
 from atlas import __version__
-from atlas.utils import DEFAULT_DESCRIPTION_ATTRS, DescriptionAttr, TempPath, logger
+
+from .utils import DEFAULT_DESCRIPTION_ATTRS, DescriptionAttr, TempPath, logger
 
 console = Console()
 
@@ -132,7 +133,7 @@ def extract(
     console.print(f"[dim]Chunk duration: {chunk_sec}s, Overlap: {overlap_sec}s[/dim]")
 
     async def run_extract():
-        from atlas.video_processor import VideoProcessor, VideoProcessorConfig
+        from .video_processor import VideoProcessor, VideoProcessorConfig
 
         config = VideoProcessorConfig(
             video_path=video_path,
@@ -227,7 +228,7 @@ def index(
     console.print(f"[dim]Chunk duration: {chunk_sec}s, Overlap: {overlap_sec}s[/dim]")
 
     async def run_index():
-        from atlas.vector_store import index_video
+        from .vector_store import index_video
 
         with Progress(
             SpinnerColumn(),
@@ -288,7 +289,7 @@ def search(query: str, top_k: int, video: Optional[str], store_path: Optional[st
     validate_api_keys(require_gemini=True, require_groq=False)
 
     async def run_search():
-        from atlas.vector_store import search_video
+        from .vector_store import search_video
 
         return await search_video(
             query=query,
@@ -360,7 +361,7 @@ def transcribe(video_path: str, format: str, output: Optional[str]):
     console.print(f"[dim]Output format: {format}[/dim]")
 
     async def run_transcribe():
-        from atlas.video_processor import extract_transcript
+        from .video_processor import extract_transcript
 
         with Progress(
             SpinnerColumn(),
@@ -399,7 +400,7 @@ def stats():
     Example:
         atlas stats
     """
-    from atlas.vector_store import VectorStore
+    from .vector_store import VectorStore
 
     store = VectorStore()
     stats_data = store.get_stats()
