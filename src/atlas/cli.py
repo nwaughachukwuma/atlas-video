@@ -58,7 +58,7 @@ def _short_name(full: str) -> str:
     'atlas.utils.MediaFileManager._clip_media_async' → '_clip_media_async'
     """
     v = full.rsplit(".", 1)
-    return v[1] if len(v) > 0 else v[0]
+    return v[1] if len(v) > 1 else v[0]
 
 
 def _print_benchmark_summary() -> None:
@@ -114,22 +114,26 @@ def parse_duration(duration_str: str) -> int:
         return int(s)
     except ValueError:
         pass
-    total, current = 0, ""
+    total, current, parsed_any = 0, "", False
     for ch in s:
         if ch.isdigit():
             current += ch
         elif ch == "h" and current:
             total += int(current) * 3600
             current = ""
+            parsed_any = True
         elif ch == "m" and current:
             total += int(current) * 60
             current = ""
+            parsed_any = True
         elif ch == "s" and current:
             total += int(current)
             current = ""
+            parsed_any = True
     if current:
         total += int(current)
-    if total == 0 and s:
+        parsed_any = True
+    if not parsed_any and s:
         _err(f"Invalid duration format: {duration_str!r} — use e.g. 15s, 1m, 1m30s")
     return total
 
@@ -144,13 +148,7 @@ def validate_video_path(video_path: str) -> Path:
 
 
 def _make_progress():
-    from rich.progress import (
-        BarColumn,
-        Progress,
-        SpinnerColumn,
-        TaskProgressColumn,
-        TextColumn,
-    )
+    from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
 
     return Progress(
         SpinnerColumn(),
@@ -198,6 +196,12 @@ def _cmd_extract(args: argparse.Namespace) -> None:
 
     if fmt not in ("json", "text"):
         _err("--format must be 'json' or 'text'")
+
+    json_to_stdout = fmt == "json" and not getattr(args, "output", None)
+    if json_to_stdout:
+        from rich.console import Console
+
+        console = Console(stderr=True)
 
     console.print(f"\n[bold blue]Processing video:[/bold blue] {video_path}")
     console.print(f"[dim]Chunk duration: {chunk_sec}s, Overlap: {overlap_sec}s[/dim]\n")
@@ -374,6 +378,7 @@ def _cmd_transcribe(args: argparse.Namespace) -> None:
     console.print(f"[dim]Output format: {fmt}[/dim]\n")
 
     output_lines: list[str] = []
+    spinner_active = [True]
 
     def _on_chunk(text: str) -> None:
         """Called in real-time as each transcript chunk arrives."""
@@ -446,10 +451,10 @@ def _cmd_list_videos(args: argparse.Namespace) -> None:
     """List all videos that have been indexed in the vector store."""
     from rich.table import Table
 
-    from .vector_store.video_index import _default_video_index
+    from .vector_store.video_index import default_video_index
 
     console = get_console()
-    vi = _default_video_index(store_path=args.store_path)
+    vi = default_video_index(store_path=args.store_path)
     videos = vi.list_videos()
 
     if not videos:
@@ -474,11 +479,11 @@ def _cmd_list_chat(args: argparse.Namespace) -> None:
     """List the chat history for a given video."""
     from rich.table import Table
 
-    from .vector_store.video_chat import _default_video_chat
+    from .vector_store.video_chat import default_video_chat
 
     console = get_console()
     video_id: str = args.video_id
-    vc = _default_video_chat(store_path=args.store_path)
+    vc = default_video_chat(store_path=args.store_path)
     history = vc.get_history(video_id, last_n=args.last_n)
 
     if not history:
@@ -507,13 +512,13 @@ def _cmd_list_chat(args: argparse.Namespace) -> None:
 def _cmd_stats(args: argparse.Namespace) -> None:
     from rich.table import Table
 
-    from .vector_store.video_chat import _default_video_chat
-    from .vector_store.video_index import _default_video_index
+    from .vector_store.video_chat import default_video_chat
+    from .vector_store.video_index import default_video_index
 
     console = get_console()
     store_path = getattr(args, "store_path", None)
-    vi = _default_video_index(store_path=store_path)
-    vc = _default_video_chat(store_path=store_path)
+    vi = default_video_index(store_path=store_path)
+    vc = default_video_chat(store_path=store_path)
 
     video_stats: object
     chat_stats: object
@@ -599,19 +604,9 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     p_extract.add_argument("video_path", help="Path to the video file.")
     p_extract.add_argument(
-        "--chunk-duration",
-        "-c",
-        default="15s",
-        metavar="DUR",
-        help="Duration of each chunk (default: 15s).",
+        "--chunk-duration", "-c", default="15s", metavar="DUR", help="Duration of each chunk (default: 15s)."
     )
-    p_extract.add_argument(
-        "--overlap",
-        "-l",
-        default="1s",
-        metavar="DUR",
-        help="Overlap between chunks (default: 1s).",
-    )
+    p_extract.add_argument("--overlap", "-l", default="1s", metavar="DUR", help="Overlap between chunks (default: 1s).")
     p_extract.add_argument(
         "--attrs",
         "-a",
@@ -621,11 +616,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     p_extract.add_argument("--output", "-o", metavar="FILE", help="Output file path (JSON).")
     p_extract.add_argument(
-        "--format",
-        "-f",
-        default="text",
-        metavar="FMT",
-        help="Output format: json or text (default: text).",
+        "--format", "-f", default="text", metavar="FMT", help="Output format: json or text (default: text)."
     )
     p_extract.add_argument(
         "--include-summary",
@@ -658,26 +649,10 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     p_index.add_argument("video_path", help="Path to the video file.")
     p_index.add_argument(
-        "--chunk-duration",
-        "-c",
-        default="15s",
-        metavar="DUR",
-        help="Duration of each chunk (default: 15s).",
+        "--chunk-duration", "-c", default="15s", metavar="DUR", help="Duration of each chunk (default: 15s)."
     )
-    p_index.add_argument(
-        "--overlap",
-        "-o",
-        default="0s",
-        metavar="DUR",
-        help="Overlap between chunks (default: 0s).",
-    )
-    p_index.add_argument(
-        "--store-path",
-        "-s",
-        default=None,
-        metavar="DIR",
-        help="Path to store the vector index.",
-    )
+    p_index.add_argument("--overlap", "-o", default="0s", metavar="DUR", help="Overlap between chunks (default: 0s).")
+    p_index.add_argument("--store-path", "-s", default=None, metavar="DIR", help="Path to store the vector index.")
     p_index.add_argument(
         "--embedding-dim",
         "-e",
@@ -703,12 +678,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     p_search.add_argument("query", help="Natural-language search query.")
     p_search.add_argument(
-        "--top-k",
-        "-k",
-        type=int,
-        default=10,
-        metavar="N",
-        help="Number of results to return (default: 10).",
+        "--top-k", "-k", type=int, default=10, metavar="N", help="Number of results to return (default: 10)."
     )
     p_search.add_argument(
         "--video-id",
@@ -718,13 +688,7 @@ def _build_parser() -> argparse.ArgumentParser:
         dest="video_id",
         help="Filter results to a specific video ID (returned by 'atlas index').",
     )
-    p_search.add_argument(
-        "--store-path",
-        "-s",
-        default=None,
-        metavar="DIR",
-        help="Path to the vector index.",
-    )
+    p_search.add_argument("--store-path", "-s", default=None, metavar="DIR", help="Path to the vector index.")
     p_search.set_defaults(func=_cmd_search)
 
     # ------------------------------------------------------------------
@@ -742,11 +706,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     p_transcribe.add_argument("video_path", help="Path to the video or audio file.")
     p_transcribe.add_argument(
-        "--format",
-        "-f",
-        default="text",
-        metavar="FMT",
-        help="Output format: text, vtt, or srt (default: text).",
+        "--format", "-f", default="text", metavar="FMT", help="Output format: text, vtt, or srt (default: text)."
     )
     p_transcribe.add_argument("--output", "-o", default=None, metavar="FILE", help="Output file path.")
     p_transcribe.set_defaults(func=_cmd_transcribe)
@@ -767,13 +727,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     p_chat.add_argument("video_id", help="Video ID returned by 'atlas index'.")
     p_chat.add_argument("query", help="Your question about the video.")
-    p_chat.add_argument(
-        "--store-path",
-        "-s",
-        default=None,
-        metavar="DIR",
-        help="Path to the vector index.",
-    )
+    p_chat.add_argument("--store-path", "-s", default=None, metavar="DIR", help="Path to the vector index.")
     p_chat.set_defaults(func=_cmd_chat)
 
     # ------------------------------------------------------------------
@@ -787,13 +741,7 @@ def _build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         parents=[_shared],
     )
-    p_list_videos.add_argument(
-        "--store-path",
-        "-s",
-        default=None,
-        metavar="DIR",
-        help="Path to the vector index.",
-    )
+    p_list_videos.add_argument("--store-path", "-s", default=None, metavar="DIR", help="Path to the vector index.")
     p_list_videos.set_defaults(func=_cmd_list_videos)
 
     # ------------------------------------------------------------------
@@ -816,13 +764,7 @@ def _build_parser() -> argparse.ArgumentParser:
         metavar="N",
         help="Maximum number of messages to show (default: 20).",
     )
-    p_list_chat.add_argument(
-        "--store-path",
-        "-s",
-        default=None,
-        metavar="DIR",
-        help="Path to the vector index.",
-    )
+    p_list_chat.add_argument("--store-path", "-s", default=None, metavar="DIR", help="Path to the vector index.")
     p_list_chat.set_defaults(func=_cmd_list_chat)
 
     # ------------------------------------------------------------------
@@ -836,13 +778,7 @@ def _build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         parents=[_shared],
     )
-    p_stats.add_argument(
-        "--store-path",
-        "-s",
-        default=None,
-        metavar="DIR",
-        help="Path to the vector index.",
-    )
+    p_stats.add_argument("--store-path", "-s", default=None, metavar="DIR", help="Path to the vector index.")
     p_stats.set_defaults(func=_cmd_stats)
 
     return parser

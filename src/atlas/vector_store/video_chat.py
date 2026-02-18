@@ -280,7 +280,7 @@ class VideoChat(BaseCollection):
 DEFAULT_STORE_ROOT = Path.home() / ".atlas" / "index"
 
 
-def _default_video_chat(store_path: Optional[str] = None, embedding_dim: int = 768) -> VideoChat:
+def default_video_chat(store_path: Optional[str] = None, embedding_dim: int = 768) -> VideoChat:
     """Return a VideoChat pointed at *store_path*/video_chat (or the default root)."""
     root = Path(store_path) if store_path else DEFAULT_STORE_ROOT
     return VideoChat(index_path=root / "video_chat", embedding_dim=embedding_dim)

@@ -6,9 +6,9 @@ import asyncio
 import json
 import os
 import subprocess
-from pathlib import Path
 from typing import Optional
 
+from .file_extension import get_content_type, get_file_extension
 from .logger import logger
 from .utils import ChunkSlot, TempPath, process_time
 
@@ -35,14 +35,14 @@ class MediaFileManager:
     def content_type(self) -> str:
         """Get media content type"""
         if self._content_type is None:
-            self._probe_media()
-        return self._content_type or "video/mp4"
+            self._content_type = get_content_type(self.file_path)
+        return self._content_type
 
     @property
     def file_ext(self) -> str:
         """Get file extension"""
         if self._file_ext is None:
-            self._file_ext = Path(self.file_path).suffix or ".mp4"
+            self._file_ext = get_file_extension(self.file_path)
         return self._file_ext
 
     def _probe_media(self) -> None:
@@ -63,7 +63,6 @@ class MediaFileManager:
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
 
             data = json.loads(result.stdout)
-
             # Get duration
             if "format" in data and "duration" in data["format"]:
                 self._duration = float(data["format"]["duration"])

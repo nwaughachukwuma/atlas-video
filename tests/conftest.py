@@ -5,10 +5,11 @@ Pytest configuration and shared fixtures for Atlas tests
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
-from src.atlas.utils import VideoAttrAnalysis
+
 import pytest
-from src.atlas.video_processor import VideoDescription
-from src.atlas.video_processor import VideoProcessorResult
+
+from src.atlas.utils import VideoAttrAnalysis
+from src.atlas.video_processor import VideoDescription, VideoProcessorResult
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))

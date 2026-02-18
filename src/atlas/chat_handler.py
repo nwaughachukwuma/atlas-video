@@ -20,8 +20,8 @@ import asyncio
 from pathlib import Path
 from typing import Optional
 
-from .vector_store.video_chat import VideoChat, _default_video_chat
-from .vector_store.video_index import VideoIndex, _default_video_index
+from .vector_store.video_chat import VideoChat, default_video_chat
+from .vector_store.video_index import VideoIndex, default_video_index
 
 
 async def chat_with_video(
@@ -53,8 +53,8 @@ async def chat_with_video(
         vi = VideoIndex(index_path=root / "video_index", embedding_dim=embedding_dim)
         vc = VideoChat(index_path=root / "video_chat", embedding_dim=embedding_dim)
     else:
-        vi = _default_video_index(embedding_dim=embedding_dim)
-        vc = _default_video_chat(embedding_dim=embedding_dim)
+        vi = default_video_index(embedding_dim=embedding_dim)
+        vc = default_video_chat(embedding_dim=embedding_dim)
 
     # 1. Multimodal context from video segments
     segment_hits = await vi.search(query, top_k=top_k_context, video_id=video_id)
@@ -100,9 +100,10 @@ async def _generate_response(
     Returns:
         The model's response text.
     """
-    from .prompts import chat_system_prompt
-    from .gemini_client import GeminiClient
     from google.genai import types
+
+    from .gemini_client import GeminiClient
+    from .prompts import chat_system_prompt
 
     system_prompt = chat_system_prompt(
         video_context=video_context,

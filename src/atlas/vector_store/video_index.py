@@ -343,7 +343,7 @@ class VideoIndex(BaseCollection):
 DEFAULT_STORE_ROOT = Path.home() / ".atlas" / "index"
 
 
-def _default_video_index(store_path: Optional[str] = None, embedding_dim: int = 768) -> VideoIndex:
+def default_video_index(store_path: Optional[str] = None, embedding_dim: int = 768) -> VideoIndex:
     """Return a VideoIndex pointed at *store_path*/video_index (or the default root)."""
     root = Path(store_path) if store_path else DEFAULT_STORE_ROOT
     return VideoIndex(index_path=root / "video_index", embedding_dim=embedding_dim)
@@ -378,7 +378,7 @@ async def index_video(
     async with VideoProcessor(config) as processor:
         result = await processor.process()
 
-    vi = _default_video_index(store_path, embedding_dim)
+    vi = default_video_index(store_path, embedding_dim)
     video_id = uuid(16)
     vi.index_path.mkdir(parents=True, exist_ok=True)
     indexed = await vi.index_video_result(result, video_id=video_id)
@@ -405,5 +405,5 @@ async def search_video(
     Returns:
         List of SearchResult ordered by relevance.
     """
-    vi = _default_video_index(store_path, embedding_dim)
+    vi = default_video_index(store_path, embedding_dim)
     return await vi.search(query, top_k=top_k, video_id=video_id)
