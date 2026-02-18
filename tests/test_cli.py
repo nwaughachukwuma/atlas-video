@@ -562,8 +562,8 @@ class TestCmdStats:
         ):
             _cmd_stats(self._args())
 
-    def test_stats_exception_handled_gracefully(self):
-        """If .stats raises (e.g. zvec not available), the command still completes."""
+    def test_stats_raises_if_zvec_unavailable(self):
+        """raises RuntimeError if zvec.stats errors or zvec is not available"""
         mock_vi = MagicMock()
         mock_vi.col_path = Path("/tmp/vi")
         type(mock_vi).stats = property(lambda self: (_ for _ in ()).throw(RuntimeError("zvec unavail")))
@@ -577,7 +577,8 @@ class TestCmdStats:
             patch("atlas.vector_store.video_index.default_video_index", return_value=mock_vi),
             patch("atlas.vector_store.video_chat.default_video_chat", return_value=mock_vc),
         ):
-            _cmd_stats(self._args())  # must not raise
+            with pytest.raises(RuntimeError, match="zvec unavail"):
+                _cmd_stats(self._args())
 
 
 # ---------------------------------------------------------------------------

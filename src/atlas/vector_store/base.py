@@ -4,8 +4,7 @@ BaseCollection — shared zvec collection lifecycle and helpers.
 Subclasses (VideoIndex, VideoChat) inherit:
   • Lazy collection open/create via the ``collection`` property
   • _uuid(), stats property
-  • Module-level zvec factory helpers (_open_collection, _create_collection,
-    _get_or_create, _make_vector_query)
+  • Module-level zvec factory helpers (_make_vector_query)
 
 Each subclass is responsible for:
   • Defining its own COLLECTION_NAME and schema via _build_schema()
@@ -31,27 +30,22 @@ if TYPE_CHECKING:
 # ---------------------------------------------------------------------------
 
 
-def _open_collection(path: str) -> "Collection":
-    import zvec
-
-    return zvec.open(path=path)
-
-
-def _create_collection(path: str, schema) -> "Collection":
-    import zvec
-
-    return zvec.create_and_open(path=path, schema=schema)
-
-
 def get_or_create_collection(path: str, schema) -> "Collection":
     """Open an existing zvec collection or create a new one at *path*."""
+    import zvec
+
+    from ..logger import logger
+
     p = Path(path)
-    if p.exists() and any(p.iterdir()):
+    if p.exists():
         try:
-            return _open_collection(path)
-        except Exception:
-            pass
-    return _create_collection(path, schema)
+            return zvec.open(path=path)
+        except Exception as e:
+            logger.info("Error in zvec.open %s", e)
+            import shutil
+
+            shutil.rmtree(p)
+    return zvec.create_and_open(path=path, schema=schema)
 
 
 def make_vector_query(embedding: list):

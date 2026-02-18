@@ -266,7 +266,6 @@ def _cmd_extract(args: argparse.Namespace) -> None:
         sys.exit(1)
     finally:
         TempPath.cleanup()
-        _print_benchmark_summary()
 
 
 def _cmd_index(args: argparse.Namespace) -> None:
@@ -313,7 +312,6 @@ def _cmd_index(args: argparse.Namespace) -> None:
         sys.exit(1)
     finally:
         TempPath.cleanup()
-        _print_benchmark_summary()
 
 
 def _cmd_search(args: argparse.Namespace) -> None:
@@ -357,8 +355,6 @@ def _cmd_search(args: argparse.Namespace) -> None:
         console.print(f"[red]Error searching: {e}[/red]")
         get_logger().exception("Error in search command")
         sys.exit(1)
-    finally:
-        _print_benchmark_summary()
 
 
 def _cmd_transcribe(args: argparse.Namespace) -> None:
@@ -409,7 +405,6 @@ def _cmd_transcribe(args: argparse.Namespace) -> None:
         sys.exit(1)
     finally:
         TempPath.cleanup()
-        _print_benchmark_summary()
 
 
 def _cmd_chat(args: argparse.Namespace) -> None:
@@ -443,8 +438,6 @@ def _cmd_chat(args: argparse.Namespace) -> None:
         console.print(f"[red]Error in chat: {e}[/red]")
         get_logger().exception("Error in chat command")
         sys.exit(1)
-    finally:
-        _print_benchmark_summary()
 
 
 def _cmd_list_videos(args: argparse.Namespace) -> None:
@@ -536,7 +529,6 @@ def _cmd_stats(args: argparse.Namespace) -> None:
     for key, value in stats_data.items():
         table.add_row(key, markup.escape(value))
     console.print(table)
-    _print_benchmark_summary()
 
 
 # ---------------------------------------------------------------------------
@@ -813,9 +805,13 @@ def main() -> None:
     t0 = perf_counter()
     try:
         args.func(args)
+    except Exception as e:
+        get_console().print(f"[red]Error while executing: {e}[/red]")
+        sys.exit(1)
     finally:
+        _print_benchmark_summary()
         elapsed = perf_counter() - t0
-        get_console().print(f"\n[dim]Execution time: {_format_elapsed(elapsed)}[/dim]")
+        get_console().print(f"\n[dim]Finished in {_format_elapsed(elapsed)}[/dim]")
 
 
 if __name__ == "__main__":
