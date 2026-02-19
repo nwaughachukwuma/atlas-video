@@ -50,12 +50,6 @@ def temp_audio_file(tmp_path):
 
 
 @pytest.fixture
-def temp_store_path(tmp_path):
-    """Create a temporary vector store path"""
-    return tmp_path / "test_vector_store"
-
-
-@pytest.fixture
 def sample_video_attr_analysis():
     """Create sample VideoAttrAnalysis objects"""
     return [

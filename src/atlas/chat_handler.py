@@ -2,8 +2,7 @@
 chat_handler — video chat pipeline.
 
 This module is the single place that combines vector retrieval with Gemini
-inference. The vector_store package knows nothing about Gemini; this handler
-composes them.
+inference.
 
 Pipeline for chat_with_video()
 --------------------------------
@@ -17,44 +16,30 @@ Pipeline for chat_with_video()
 from __future__ import annotations
 
 import asyncio
-from pathlib import Path
-from typing import Optional
 
-from .vector_store.video_chat import VideoChat, default_video_chat
-from .vector_store.video_index import VideoIndex, default_video_index
+from .vector_store.video_chat import default_video_chat
+from .vector_store.video_index import default_video_index
 
 
 async def chat_with_video(
     video_id: str,
     query: str,
-    store_path: Optional[str] = None,
-    top_k_context: int = 5,
-    top_k_chat: int = 5,
-    embedding_dim: int = 768,
+    top_k_context=10,
+    top_k_chat=10,
 ) -> str:
     """Run a single-turn chat against an indexed video.
 
     Args:
         video_id: The video to chat about.
         query: The user's question.
-        store_path: Root store directory. When provided the function
-            derives ``video_index`` and ``video_chat`` sub-paths from it;
-            otherwise each collection defaults to its own standard location.
         top_k_context: Number of multimodal segment hits from VideoIndex.
         top_k_chat: Number of semantic chat hits from VideoChat.
-        embedding_dim: Embedding dimension (768 or 3072).
 
     Returns:
         The assistant's response string.
     """
-    # Derive per-collection paths from a shared root when provided
-    if store_path:
-        root = Path(store_path)
-        vi = VideoIndex(col_path=root / "video_index", embedding_dim=embedding_dim)
-        vc = VideoChat(col_path=root / "video_chat", embedding_dim=embedding_dim)
-    else:
-        vi = default_video_index(embedding_dim=embedding_dim)
-        vc = default_video_chat(embedding_dim=embedding_dim)
+    vi = default_video_index()
+    vc = default_video_chat()
 
     # 1. Multimodal context from video segments
     segment_hits = await vi.search(query, top_k=top_k_context, video_id=video_id)
@@ -79,7 +64,6 @@ async def chat_with_video(
     # 5. Persist both turns (sidecar + zvec)
     await vc.record_turn(video_id, "user", query)
     await vc.record_turn(video_id, "assistant", answer)
-
     return answer
 
 

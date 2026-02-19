@@ -346,10 +346,12 @@ class VideoIndex(BaseCollection):
             logger.error(f"Error deleting video_index doc {doc_id}: {e}")
 
 
-def default_video_index(store_path: Optional[str] = None, embedding_dim: int = 768) -> VideoIndex:
-    """Return a VideoIndex pointed at *store_path*/video_index (or the default root)."""
-    root = Path(store_path) if store_path else DEFAULT_STORE_ROOT
-    return VideoIndex(col_path=root / COLLECTION_NAME, embedding_dim=embedding_dim)
+def default_video_index(embedding_dim: int = 768) -> VideoIndex:
+    """Return a VideoIndex object"""
+    return VideoIndex(
+        col_path=DEFAULT_STORE_ROOT / COLLECTION_NAME,
+        embedding_dim=embedding_dim,
+    )
 
 
 async def index_video(
@@ -358,7 +360,6 @@ async def index_video(
     overlap=0,
     description_attrs: Optional[List[DescriptionAttr]] = None,
     include_summary=True,
-    store_path: Optional[str] = None,
     embedding_dim=768,
 ) -> tuple[str, int, "VideoProcessorResult"]:
     """Process a video file, index it, and register it.
@@ -369,7 +370,6 @@ async def index_video(
         overlap: Overlap between chunks in seconds.
         description_attrs: List of attributes to extract (e.g., ["visual_cues", "interactions"]).
         include_summary: Whether to generate summaries for each segment.
-        store_path: Directory for the video_index collection.
         embedding_dim: Embedding dimension (768 or 3072).
 
     Returns:
@@ -389,7 +389,7 @@ async def index_video(
     async with VideoProcessor(config) as processor:
         result = await processor.process()
 
-    vi = default_video_index(store_path, embedding_dim)
+    vi = default_video_index(embedding_dim)
     vi.col_path.mkdir(parents=True, exist_ok=True)
 
     video_id = uuid(16)
@@ -403,7 +403,6 @@ async def search_video(
     query: str,
     top_k: int = 10,
     video_id: Optional[str] = None,
-    store_path: Optional[str] = None,
     embedding_dim: int = 768,
 ) -> List[SearchResult]:
     """Semantic search over indexed video segments.
@@ -412,11 +411,10 @@ async def search_video(
         query: Natural-language query.
         top_k: Number of results.
         video_id: Restrict to this video (optional).
-        store_path: Directory for the video_index collection.
         embedding_dim: Embedding dimension (768 or 3072).
 
     Returns:
         List of SearchResult ordered by relevance.
     """
-    vi = default_video_index(store_path, embedding_dim)
+    vi = default_video_index(embedding_dim)
     return await vi.search(query, top_k, video_id)

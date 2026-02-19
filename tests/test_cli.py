@@ -122,14 +122,12 @@ class TestParserConstruction:
         assert ns.video_path == "video.mp4"
         assert ns.chunk_duration == "15s"
         assert ns.overlap == "0s"
-        assert ns.store_path is None
         assert ns.embedding_dim == 768
 
     def test_index_custom_flags(self, parser):
-        ns = parser.parse_args(["index", "video.mp4", "-c", "20s", "-o", "2s", "-s", "/tmp/idx", "-e", "3072"])
+        ns = parser.parse_args(["index", "video.mp4", "-c", "20s", "-o", "2s", "-e", "3072"])
         assert ns.chunk_duration == "20s"
         assert ns.overlap == "2s"
-        assert ns.store_path == "/tmp/idx"
         assert ns.embedding_dim == 3072
 
     # ---- search ----
@@ -139,13 +137,11 @@ class TestParserConstruction:
         assert ns.query == "hello world"
         assert ns.top_k == 10
         assert ns.video_id is None
-        assert ns.store_path is None
 
     def test_search_custom_flags(self, parser):
-        ns = parser.parse_args(["search", "q", "-k", "5", "-v", "vid1", "-s", "/idx"])
+        ns = parser.parse_args(["search", "q", "-k", "5", "-v", "vid1"])
         assert ns.top_k == 5
         assert ns.video_id == "vid1"
-        assert ns.store_path == "/idx"
 
     # ---- transcribe ----
 
@@ -166,17 +162,6 @@ class TestParserConstruction:
         ns = parser.parse_args(["chat", "vid1", "What is this about?"])
         assert ns.video_id == "vid1"
         assert ns.query == "What is this about?"
-        assert ns.store_path is None
-
-    # ---- list-videos ----
-
-    def test_list_videos_defaults(self, parser):
-        ns = parser.parse_args(["list-videos"])
-        assert ns.store_path is None
-
-    def test_list_videos_store_path(self, parser):
-        ns = parser.parse_args(["list-videos", "-s", "/tmp/idx"])
-        assert ns.store_path == "/tmp/idx"
 
     # ---- list-chat ----
 
@@ -184,17 +169,10 @@ class TestParserConstruction:
         ns = parser.parse_args(["list-chat", "vid1"])
         assert ns.video_id == "vid1"
         assert ns.last_n == 20
-        assert ns.store_path is None
 
     def test_list_chat_last_n(self, parser):
         ns = parser.parse_args(["list-chat", "vid1", "-n", "5"])
         assert ns.last_n == 5
-
-    # ---- stats ----
-
-    def test_stats_defaults(self, parser):
-        ns = parser.parse_args(["stats"])
-        assert ns.store_path is None
 
     # ---- shared --benchmark flag ----
 
@@ -332,12 +310,11 @@ class TestValidateApiKeys:
 
 
 class TestCmdIndex:
-    def _args(self, video_path="/tmp/v.mp4", store_path=None):
+    def _args(self, video_path="/tmp/v.mp4"):
         return argparse.Namespace(
             video_path=video_path,
             chunk_duration="15s",
             overlap="0s",
-            store_path=store_path,
             embedding_dim=768,
             benchmark=False,
         )
@@ -392,12 +369,11 @@ class TestCmdIndex:
 
 
 class TestCmdSearch:
-    def _args(self, query="people talking", top_k=5, video_id=None, store_path=None):
+    def _args(self, query="people talking", top_k=5, video_id=None):
         return argparse.Namespace(
             query=query,
             top_k=top_k,
             video_id=video_id,
-            store_path=store_path,
             benchmark=False,
         )
 
@@ -442,13 +418,8 @@ class TestCmdSearch:
 
 
 class TestCmdChat:
-    def _args(self, video_id="vid1", query="What is this?", store_path=None):
-        return argparse.Namespace(
-            video_id=video_id,
-            query=query,
-            store_path=store_path,
-            benchmark=False,
-        )
+    def _args(self, video_id="vid1", query="What is this?"):
+        return argparse.Namespace(video_id=video_id, query=query, benchmark=False)
 
     def test_success(self, monkeypatch, progress_ctx):
         monkeypatch.setenv("GEMINI_API_KEY", "k1")
@@ -481,8 +452,8 @@ class TestCmdChat:
 
 
 class TestCmdListVideos:
-    def _args(self, store_path=None):
-        return argparse.Namespace(store_path=store_path, benchmark=False)
+    def _args(self):
+        return argparse.Namespace(benchmark=False)
 
     def test_no_videos(self):
         mock_vi = MagicMock()
@@ -497,13 +468,6 @@ class TestCmdListVideos:
         with patch("atlas.vector_store.video_index.default_video_index", return_value=mock_vi):
             _cmd_list_videos(self._args())
 
-    def test_custom_store_path_forwarded(self):
-        mock_vi = MagicMock()
-        mock_vi.list_videos.return_value = []
-        with patch("atlas.vector_store.video_index.default_video_index", return_value=mock_vi) as mock_factory:
-            _cmd_list_videos(self._args(store_path="/custom/path"))
-            mock_factory.assert_called_once_with(store_path="/custom/path")
-
 
 # ---------------------------------------------------------------------------
 # TestCmdListChat
@@ -511,8 +475,8 @@ class TestCmdListVideos:
 
 
 class TestCmdListChat:
-    def _args(self, video_id="vid1", last_n=20, store_path=None):
-        return argparse.Namespace(video_id=video_id, last_n=last_n, store_path=store_path, benchmark=False)
+    def _args(self, video_id="vid1", last_n=20):
+        return argparse.Namespace(video_id=video_id, last_n=last_n, benchmark=False)
 
     def test_no_history(self):
         mock_vc = MagicMock()
@@ -543,8 +507,8 @@ class TestCmdListChat:
 
 
 class TestCmdStats:
-    def _args(self, store_path=None):
-        return argparse.Namespace(store_path=store_path, benchmark=False)
+    def _args(self):
+        return argparse.Namespace(benchmark=False)
 
     def test_success(self):
         mock_vi = MagicMock()

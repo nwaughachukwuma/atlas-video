@@ -290,7 +290,9 @@ class VideoChat(BaseCollection):
         ]
 
 
-def default_video_chat(store_path: Optional[str] = None, embedding_dim=768) -> VideoChat:
-    """Return a VideoChat pointed at *store_path*/video_chat (or the default root)."""
-    root = Path(store_path) if store_path else DEFAULT_STORE_ROOT
-    return VideoChat(col_path=root / COLLECTION_NAME, embedding_dim=embedding_dim)
+def default_video_chat(embedding_dim=768) -> VideoChat:
+    """Return a VideoChat object"""
+    return VideoChat(
+        col_path=DEFAULT_STORE_ROOT / COLLECTION_NAME,
+        embedding_dim=embedding_dim,
+    )

@@ -14,7 +14,7 @@ from src.atlas.vector_store import (
     VideoIndex,
 )
 from src.atlas.vector_store.video_chat import default_video_chat
-from src.atlas.vector_store.video_index import default_video_index
+from src.atlas.vector_store.video_index import DEFAULT_STORE_ROOT, default_video_index
 from src.atlas.video_processor import VideoDescription
 
 # ---------------------------------------------------------------------------
@@ -220,9 +220,9 @@ class TestVideoIndex:
         assert "vid_001" not in ids
         assert "vid_002" in ids
 
-    def testdefault_video_index_helper(self, tmp_path):
-        vi = default_video_index(store_path=str(tmp_path))
-        assert vi.col_path == tmp_path / "video_index"
+    def testdefault_video_index_helper(self):
+        vi = default_video_index()
+        assert vi.col_path == DEFAULT_STORE_ROOT / "video_index"
         assert vi.embedding_dim == 768
 
 
@@ -270,9 +270,9 @@ class TestVideoChat:
         history = vc.get_history("vid_xyz", last_n=6)
         assert len(history) == 6
 
-    def testdefault_video_chat_helper(self, tmp_path):
-        vc = default_video_chat(store_path=str(tmp_path))
-        assert vc.col_path == tmp_path / "video_chat"
+    def testdefault_video_chat_helper(self):
+        vc = default_video_chat()
+        assert vc.col_path == DEFAULT_STORE_ROOT / "video_chat"
         assert vc.embedding_dim == 768
 
     def test_uuid(self, tmp_path):

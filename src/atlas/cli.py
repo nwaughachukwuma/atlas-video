@@ -300,7 +300,6 @@ def _cmd_index(args: argparse.Namespace) -> None:
                 overlap=overlap_sec,
                 description_attrs=description_attrs,
                 include_summary=args.include_summary,
-                store_path=args.store_path,
             )
             progress.update(task, completed=True)
         return video_id, indexed_count, result
@@ -313,7 +312,6 @@ def _cmd_index(args: argparse.Namespace) -> None:
         console.print(f"  Duration:           {result.duration:.2f}s")
         console.print(f"  Segments processed: {len(result.video_descriptions)}")
         console.print(f"  Documents indexed:  {indexed_count}")
-        console.print(f"  Index location:     {args.store_path or '~/.atlas/index'}")
         console.print(
             f"\n[dim]Use[/dim] [bold]atlas search --video-id {video_id} '...'[/bold] [dim]to query this video.[/dim]"
         )
@@ -334,14 +332,7 @@ def _cmd_search(args: argparse.Namespace) -> None:
     validate_api_keys(require_gemini=True, require_groq=False)
 
     try:
-        results = asyncio.run(
-            search_video(
-                query=args.query,
-                top_k=args.top_k,
-                video_id=args.video_id,
-                store_path=args.store_path,
-            )
-        )
+        results = asyncio.run(search_video(args.query, args.top_k, args.video_id))
         if not results:
             console.print("[yellow]No results found.[/yellow]")
             console.print("Make sure you have indexed some videos first with 'atlas index'")
@@ -444,7 +435,6 @@ def _cmd_chat(args: argparse.Namespace) -> None:
             answer = await chat_with_video(
                 video_id=video_id,
                 query=query,
-                store_path=args.store_path,
             )
             progress.update(task, completed=True)
         return answer
@@ -467,7 +457,7 @@ def _cmd_list_videos(args: argparse.Namespace) -> None:
     console = get_console()
     with _make_progress() as progress:
         task = progress.add_task("Loading videos...", total=None)
-        vi = default_video_index(store_path=args.store_path)
+        vi = default_video_index()
         videos = vi.list_videos()
         progress.update(task, completed=True)
 
@@ -499,7 +489,7 @@ def _cmd_list_chat(args: argparse.Namespace) -> None:
     video_id: str = args.video_id
     with _make_progress() as progress:
         task = progress.add_task("Loading chat history...", total=None)
-        vc = default_video_chat(store_path=args.store_path)
+        vc = default_video_chat()
         history = vc.get_history(video_id, last_n=args.last_n)
         progress.update(task, completed=True)
 
@@ -534,11 +524,10 @@ def _cmd_stats(args: argparse.Namespace) -> None:
     from .vector_store.video_index import default_video_index
 
     console = get_console()
-    store_path = getattr(args, "store_path", None)
     with _make_progress() as progress:
         task = progress.add_task("Loading stats...", total=None)
-        vi = default_video_index(store_path=store_path)
-        vc = default_video_chat(store_path=store_path)
+        vi = default_video_index()
+        vc = default_video_chat()
         progress.update(task, completed=True)
 
     stats_data = {
@@ -582,7 +571,7 @@ def _build_parser() -> argparse.ArgumentParser:
             "Examples:\n"
             "  atlas transcribe video.mp4\n"
             "  atlas extract video.mp4 --chunk-duration=15s\n"
-            "  atlas index video.mp4 --store-path ./my_index\n"
+            "  atlas index video.mp4 ./my_index\n"
             "  atlas search 'people discussing AI'\n"
             "  atlas search 'people discussing AI' --video-id abc123\n"
             "  atlas chat abc123 'What is this video about?'\n"
@@ -661,7 +650,6 @@ def _build_parser() -> argparse.ArgumentParser:
         "--chunk-duration", "-c", default="15s", metavar="DUR", help="Duration of each chunk (default: 15s)."
     )
     p_index.add_argument("--overlap", "-o", default="0s", metavar="DUR", help="Overlap between chunks (default: 0s).")
-    p_index.add_argument("--store-path", "-s", default=None, metavar="DIR", help="Path to store the vector index.")
     p_index.add_argument(
         "--embedding-dim",
         "-e",
@@ -717,7 +705,6 @@ def _build_parser() -> argparse.ArgumentParser:
         dest="video_id",
         help="Filter results to a specific video ID (returned by 'atlas index').",
     )
-    p_search.add_argument("--store-path", "-s", default=None, metavar="DIR", help="Path to the vector index.")
     p_search.set_defaults(func=_cmd_search)
 
     # ------------------------------------------------------------------
@@ -756,7 +743,6 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     p_chat.add_argument("video_id", help="Video ID returned by 'atlas index'.")
     p_chat.add_argument("query", help="Your question about the video.")
-    p_chat.add_argument("--store-path", "-s", default=None, metavar="DIR", help="Path to the vector index.")
     p_chat.set_defaults(func=_cmd_chat)
 
     # ------------------------------------------------------------------
@@ -770,7 +756,6 @@ def _build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         parents=[_shared],
     )
-    p_list_videos.add_argument("--store-path", "-s", default=None, metavar="DIR", help="Path to the vector index.")
     p_list_videos.set_defaults(func=_cmd_list_videos)
 
     # ------------------------------------------------------------------
@@ -793,7 +778,6 @@ def _build_parser() -> argparse.ArgumentParser:
         metavar="N",
         help="Maximum number of messages to show (default: 20).",
     )
-    p_list_chat.add_argument("--store-path", "-s", default=None, metavar="DIR", help="Path to the vector index.")
     p_list_chat.set_defaults(func=_cmd_list_chat)
 
     # ------------------------------------------------------------------
@@ -807,7 +791,6 @@ def _build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         parents=[_shared],
     )
-    p_stats.add_argument("--store-path", "-s", default=None, metavar="DIR", help="Path to the vector index.")
     p_stats.set_defaults(func=_cmd_stats)
 
     return parser
