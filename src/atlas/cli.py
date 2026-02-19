@@ -43,9 +43,9 @@ def get_console() -> "Console":
 
 
 def get_logger():
-    from .logger import logger
+    from .logger import get_logger as _get_logger
 
-    return logger
+    return _get_logger("atlas:cli")
 
 
 # ---------------------------------------------------------------------------

@@ -38,7 +38,7 @@ class TranscriptSegment(TypedDict):
     tokens: list[int]
 
 
-@dataclass
+@dataclass(frozen=True)
 class ProcessTranscriptResult:
     """Transcript result with timing"""
 

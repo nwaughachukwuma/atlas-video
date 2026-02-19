@@ -11,16 +11,13 @@ def uuid(size=17) -> str:
     return generate(alphabet_set, size)
 
 
-# Usage example
+# Usage
 # ids = generate_ids()
 # id1 = next(ids)
-# id2 = next(ids)
-# ...
 
-# With a transformer
+# Transformation
 # ids = generate_ids(lambda id: f"prefix-{id}")
 # id1 = next(ids)
-# id2 = next(ids)
 # ...
 
 

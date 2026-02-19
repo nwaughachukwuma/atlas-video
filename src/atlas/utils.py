@@ -3,6 +3,7 @@ Core utilities for Atlas
 """
 
 import asyncio
+import inspect
 import os
 import shutil
 import tempfile
@@ -18,8 +19,11 @@ from .logger import logger
 T = TypeVar("T")
 
 
-def process_time(label: str | None = None):
-    """Decorator that silently records wall-clock execution time per function.
+enable_logging = os.environ.get("ENABLE_LOGGING", False)
+
+
+def process_time(label: str | None = None, debug=enable_logging):
+    """Decorator that records wall-clock execution time per function.
 
     Timing is accumulated in the global BenchmarkRegistry.  To see the
     per-function breakdown (total / avg / min / max across all calls) pass
@@ -31,6 +35,7 @@ def process_time(label: str | None = None):
     label:
         Registry key for this function.  Defaults to the fully-qualified name
         ``"module.ClassName.method_name"``.
+    silent: Only record without being noisy
     """
 
     def decorator(func):
@@ -38,7 +43,7 @@ def process_time(label: str | None = None):
 
         fn_label = label or f"{func.__module__}.{func.__qualname__}"
 
-        if asyncio.iscoroutinefunction(func):
+        if inspect.iscoroutinefunction(func):
 
             @wraps(func)
             async def async_wrapper(*args, **kwargs):
@@ -48,7 +53,8 @@ def process_time(label: str | None = None):
                 finally:
                     time_diff = time() - t0
                     registry.record(fn_label, time_diff)
-                    logger.info(f"⏱️ {func.__name__} completed in {time_diff}")
+                    if debug:
+                        logger.info(f"⏱️ {func.__name__} completed in {time_diff}")
 
             return async_wrapper
 
@@ -60,7 +66,8 @@ def process_time(label: str | None = None):
             finally:
                 time_diff = time() - t0
                 registry.record(fn_label, time_diff)
-                logger.info(f"⏱️ {func.__name__} completed in {time_diff}")
+                if debug:
+                    logger.info(f"⏱️ {func.__name__} completed in {time_diff}")
 
         return wrapper
 
@@ -81,7 +88,7 @@ def retry(retry_config: RetryConfig | None, default_return: Any = None):
     config = retry_config or RetryConfig()
 
     def decorator(func):
-        if asyncio.iscoroutinefunction(func):
+        if inspect.iscoroutinefunction(func):
 
             @wraps(func)
             async def async_wrapper(*args, **kwargs):

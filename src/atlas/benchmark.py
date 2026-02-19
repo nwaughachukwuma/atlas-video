@@ -22,7 +22,7 @@ Query results at any point:
 
 from __future__ import annotations
 
-import asyncio
+import inspect
 import threading
 from collections import defaultdict
 from dataclasses import dataclass
@@ -189,7 +189,7 @@ def timed(label: str | None = None) -> Callable:
     def decorator(func: Callable) -> Callable:
         fn_label = label or f"{func.__module__}.{func.__qualname__}"
 
-        if asyncio.iscoroutinefunction(func):
+        if inspect.iscoroutinefunction(func):
 
             @wraps(func)
             async def async_wrapper(*args, **kwargs):

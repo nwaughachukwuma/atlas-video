@@ -42,7 +42,6 @@ dependencies = [
     "zvec>=0.2.0",
     "rich>=13.0.0",
     "httpx>=0.25.0",
-    "numpy>=1.20.0",
     "python-dotenv",
     "nanoid"
 ]
