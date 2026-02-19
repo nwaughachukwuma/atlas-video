@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
 
 from ..uuid import uuid
 
@@ -48,7 +48,7 @@ def get_or_create_collection(path: str, schema) -> "Collection":
     return zvec.create_and_open(path=path, schema=schema)
 
 
-def make_vector_query(embedding: list):
+def make_vector_query(embedding: List[float]):
     """Build a zvec VectorQuery over the 'embedding' vector field."""
     from zvec import VectorQuery
 

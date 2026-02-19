@@ -359,9 +359,8 @@ def _cmd_search(args: argparse.Namespace) -> None:
 
 def _cmd_transcribe(args: argparse.Namespace) -> None:
     """Transcribe a video, streaming output to the terminal in real-time."""
-    from .transcript import ReturnValue
+    from .transcript import ReturnValue, get_video_transcript
     from .utils import TempPath
-    from .video_processor import get_video_transcript
 
     console = get_console()
     fmt: ReturnValue = args.format

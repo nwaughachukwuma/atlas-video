@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from .gemini_client import GeminiMediaEngine
 from .media_manager import MediaFileManager
 from .prompts import VideoPrompt, video_analysis_prompts, video_system_prompt
-from .transcript import ProcessTranscript, ReturnValue
+from .transcript import get_video_transcript
 from .utils import (
     DEFAULT_DESCRIPTION_ATTRS,
     ChunkSlot,
@@ -53,28 +53,6 @@ class VideoProcessorResult(BaseModel):
     duration: float
     transcript: str = ""
     video_descriptions: list[VideoDescription]
-
-
-@process_time()
-async def get_video_transcript(
-    video_path: str,
-    format: ReturnValue = "text",
-    on_chunk: Optional[Callable[[str], None]] = None,
-) -> str:
-    """Extract transcript from a video file, with option to invoke *on_chunk* with text as it arrives.
-
-    Args:
-        video_path: Path to the video or audio file.
-        format: Output format ('text', 'vtt', or 'srt').
-        on_chunk: Optional callback called with each text chunk as it becomes available.
-
-    Returns:
-        The full transcript string.
-    """
-    return_value = format if format in ("text", "vtt", "srt") else "text"
-    async with ProcessTranscript(video_path, return_value) as proc:
-        result = await proc.process(on_chunk)
-    return result or ""
 
 
 class VideoProcessor(MediaFileManager, GeminiMediaEngine):

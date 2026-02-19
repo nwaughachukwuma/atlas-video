@@ -184,7 +184,7 @@ class TestEndToEnd:
 
     @pytest.mark.asyncio
     async def test_get_video_transcript_workflow(self, sample_video, mock_env_vars):
-        with patch("atlas.video_processor.ProcessTranscript") as mock_transcript:
+        with patch("atlas.transcript.ProcessTranscript") as mock_transcript:
             mock_instance = MagicMock()
             mock_instance.process = AsyncMock(return_value="Test transcript content")
             mock_instance.__aenter__ = AsyncMock(return_value=mock_instance)
