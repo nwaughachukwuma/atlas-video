@@ -4,8 +4,8 @@ atlas.vector_store — vector index package for Atlas.
 Structure
 ---------
 base.py        BaseCollection — shared zvec lifecycle and helpers
-video_index.py VideoIndex     — multimodal segment embeddings + registry
-video_chat.py  VideoChat      — per-video chat history embeddings + JSONL sidecar
+video_index.py VideoIndex     — multimodal segment embeddings
+video_chat.py  VideoChat      — per-video chat history embeddings
 
 All public symbols are re-exported here so callers can use either:
     from atlas.vector_store import VideoIndex, SearchResult
@@ -14,6 +14,8 @@ All public symbols are re-exported here so callers can use either:
 
 from .video_chat import (
     COLLECTION_NAME as CHAT_COLLECTION_NAME,
+)
+from .video_chat import (
     ChatDocument,
     ChatResult,
     ChatRole,
@@ -21,6 +23,8 @@ from .video_chat import (
 )
 from .video_index import (
     COLLECTION_NAME as VIDEO_COLLECTION_NAME,
+)
+from .video_index import (
     IndexDocument,
     SearchResult,
     VideoEntry,

@@ -159,7 +159,7 @@ def _print_queued_info(
     console.print(f"\n  [dim]Track this task:[/dim]  atlas queue status --task-id {task_id}")
     console.print("  [dim]View all tasks:[/dim]   atlas queue list")
     console.print("  [dim]System notification will fire on completion/failure.[/dim]")
-    console.print("  [dim]You can keep using the Atlas for new tasks.[/dim]")
+    console.print("  [dim]You can keep using Atlas for new tasks.[/dim]")
 
 
 def _print_benchmark_summary() -> None:

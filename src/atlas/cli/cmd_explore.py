@@ -21,14 +21,20 @@ def _cmd_search(args: argparse.Namespace) -> None:
     console = get_console()
     validate_api_keys(require_gemini=True, require_groq=False)
 
+    pos = args.search_args
+    if len(pos) >= 2:
+        video_id, query = pos[0], " ".join(pos[1:])
+    else:
+        video_id, query = None, pos[0]
+
     try:
-        results = asyncio.run(search_video(args.query, args.top_k, args.video_id))
+        results = asyncio.run(search_video(query, args.top_k, video_id))
         if not results:
             console.print("[yellow]No results found.[/yellow]")
             console.print("Make sure you have indexed some videos first with 'atlas index'")
             return
 
-        console.print(f"\n[bold green]Found {len(results)} results for:[/bold green] '{args.query}'\n")
+        console.print(f"\n[bold green]Found {len(results)} results for:[/bold green] '{query}'\n")
         table = Table(show_header=True, header_style="bold magenta")
         table.add_column("#", style="dim", width=3)
         table.add_column("Score", justify="right", width=8)
@@ -112,9 +118,11 @@ def _cmd_list_videos(args: argparse.Namespace) -> None:
     for i, entry in enumerate(videos, 1):
         table.add_row(str(i), entry.video_id, entry.indexed_at)
     console.print(table)
+    console.print("\n[dim]Use[/dim] [bold]atlas search <VIDEO_ID> '...'[/bold] [dim]to search a specific video.[/dim]")
     console.print(
-        "\n[dim]Use[/dim] [bold]atlas search --video-id <VIDEO_ID> '...'[/bold] [dim]to search a specific video.[/dim]"
+        "\n[dim]Use[/dim] [bold]atlas get-video <VIDEO_ID>[/bold] [dim]to retrieve all indexed data for a video.[/dim]"
     )
+    console.print("\n[dim]Use[/dim] [bold]atlas chat <VIDEO_ID> '<query>'[/bold] [dim]to chat with your video.[/dim]")
 
 
 # ── list-chat ─────────────────────────────────────────────────────────────────
@@ -192,3 +200,37 @@ def _cmd_stats(args: argparse.Namespace) -> None:
     for key, value in stats_data.items():
         table.add_row(key, markup.escape(value))
     console.print(table)
+
+
+# ── get-data ───────────────────────────────────────────────────────────────────────
+
+
+def _cmd_get_data(args: argparse.Namespace) -> None:
+    """Retrieve all indexed data for a video in extract-command shape."""
+    import json
+    from pathlib import Path
+
+    from . import get_console
+    from ..vector_store.video_index import default_video_index
+
+    console = get_console()
+    video_id: str = args.video_id
+    output_path: str | None = getattr(args, "output", None)
+
+    with _make_progress() as progress:
+        task = progress.add_task("Fetching video data…", total=None)
+        vi = default_video_index()
+        data = vi.get_video_data(video_id)
+        progress.update(task, completed=True)
+
+    if not data:
+        console.print(f"[yellow]No data found for video_id=[/yellow][cyan]{video_id}[/cyan]")
+        console.print("Make sure the video has been indexed with: [bold]atlas index video.mp4[/bold]")
+        return
+
+    output_str = json.dumps(data, indent=2)
+    if output_path:
+        Path(output_path).write_text(output_str)
+        console.print(f"[green]Data saved to:[/green] {output_path}")
+    else:
+        print(output_str)

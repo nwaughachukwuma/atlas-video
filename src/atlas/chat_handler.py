@@ -45,7 +45,7 @@ async def chat_with_video(
     segment_hits = await vi.search(query, top_k=top_k_context, video_id=video_id)
     video_context = [r.content for r in segment_hits]
 
-    # 2. Ordered history from JSONL sidecar (fast tail read)
+    # 2. Ordered history from zvec (chronological by timestamp)
     history = vc.get_history(video_id, last_n=20)
 
     # 3. Semantic chat context, deduped against ordered history
@@ -61,7 +61,7 @@ async def chat_with_video(
         extra_context=extra_context,
     )
 
-    # 5. Persist both turns (sidecar + zvec)
+    # 5. Persist both turns
     await vc.record_turn(video_id, "user", query)
     await vc.record_turn(video_id, "assistant", answer)
     return answer

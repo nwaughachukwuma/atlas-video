@@ -7,7 +7,7 @@ semantic retrieval.
 
 Module-level helpers
 --------------------
-index_video(video_path, ...)   — process + embed + register a video file
+index_video(video_path, ...)   — process + embed + index a video file
 search_video(query, ...)       — semantic search over indexed segments
 """
 
@@ -84,18 +84,13 @@ class VideoEntry(BaseModel):
 class VideoIndex(BaseCollection):
     """Manages the video_index zvec collection.
 
-    Owns both the zvec collection (embeddings + metadata) and the JSON
-    registry sidecar that tracks which video_ids have been indexed.
+    Owns the zvec collection (embeddings + metadata) that stores
+    multimodal segment data and tracks which video_ids have been indexed.
 
     Args:
         col_path: Directory for this collection (e.g. ~/.atlas/index/video_index).
         embedding_dim: Embedding dimension — 768 or 3072.
     """
-
-    # Registry lives inside the collection directory
-    @property
-    def _registry_path(self) -> Path:
-        return self.col_path / "registry.json"
 
     # ------------------------------------------------------------------
     # Schema
@@ -157,43 +152,29 @@ class VideoIndex(BaseCollection):
         )
 
     # ------------------------------------------------------------------
-    # Registry sidecar
+    # Read helpers
     # ------------------------------------------------------------------
 
     def list_videos(self) -> List[VideoEntry]:
-        """Return all registered videos from the registry sidecar."""
-        if not self._registry_path.exists():
-            return []
+        """Return all indexed videos by scanning the zvec collection."""
         try:
-            data = json.loads(self._registry_path.read_text())
-            return [VideoEntry(**v) for v in data]
+            results = self.collection.query(filter="video_id is not null", topk=1_000)
         except Exception as e:
-            logger.error(f"Error reading video registry: {e}")
+            logger.error(f"Error listing videos from zvec: {e}")
             return []
 
-    def register(self, video_id: str) -> None:
-        """Add *video_id* to the registry (no-op if already present)."""
-        entries: list[dict] = []
-        if self._registry_path.exists():
-            try:
-                entries = json.loads(self._registry_path.read_text())
-            except Exception:
-                entries = []
-        if video_id not in {e["video_id"] for e in entries}:
-            entries.append({"video_id": video_id, "indexed_at": datetime.now().isoformat()})
-            self._registry_path.write_text(json.dumps(entries, indent=2))
+        videos: dict[str, str] = {}  # video_id → earliest indexed_at
+        for r in results:
+            vid = r.field("video_id")
+            meta = json.loads(r.field("metadata"))
+            ts = meta.get("indexed_at", "")
+            if vid not in videos or (ts and ts < videos[vid]):
+                videos[vid] = ts
 
-    def unregister(self, video_id: str) -> None:
-        """Remove *video_id* from the registry."""
-        if not self._registry_path.exists():
-            return
-        try:
-            entries = json.loads(self._registry_path.read_text())
-            updated = [e for e in entries if e.get("video_id") != video_id]
-            if len(updated) != len(entries):
-                self._registry_path.write_text(json.dumps(updated, indent=2))
-        except Exception as e:
-            logger.error(f"Error unregistering video_id={video_id}: {e}")
+        return sorted(
+            [VideoEntry(video_id=vid, indexed_at=ts) for vid, ts in videos.items()],
+            key=lambda e: e.indexed_at,
+        )
 
     # ------------------------------------------------------------------
     # Write
@@ -250,6 +231,10 @@ class VideoIndex(BaseCollection):
             embedding = await _guarded_embed(content)
             docs = [_make_index_doc(desc, content, embedding)]
 
+            # Persist summary in main document metadata for later retrieval
+            if desc.summary:
+                docs[0].metadata["summary"] = desc.summary
+
             # Granular per-attribute documents for targeted retrieval
             analysis_items = [a for a in desc.video_analysis if a.value.strip()]
             analysis_embeddings = await asyncio.gather(*[_guarded_embed(a.value) for a in analysis_items])
@@ -305,7 +290,7 @@ class VideoIndex(BaseCollection):
                 results = self.collection.query(
                     vector_query,
                     topk=top_k,
-                    filter=f"video_id == {video_id}",
+                    filter=f"video_id = '{video_id}'",
                 )
             else:
                 results = self.collection.query(vector_query, topk=top_k)
@@ -326,17 +311,66 @@ class VideoIndex(BaseCollection):
             for r in results
         ]
 
+    def get_video_data(self, video_id: str) -> Optional[dict]:
+        """Retrieve all indexed data for *video_id* in extract-command shape.
+
+        Returns a dict with keys: video_id, duration, video_descriptions,
+        segments_count — or ``None`` if the video is not found.
+        """
+        try:
+            results = self.collection.query(topk=1024, filter=f"video_id = '{video_id}'")
+            if not results:
+                return None
+        except Exception as e:
+            logger.error(f"Error fetching video data: {e}")
+            return None
+
+        # Group results by (start, end) to reconstruct segments
+        segments: dict[tuple[float, float], dict] = {}
+        for r in results:
+            start = float(r.field("start"))
+            end = float(r.field("end"))
+            meta = json.loads(r.field("metadata"))
+            key = (start, end)
+
+            if key not in segments:
+                segments[key] = {
+                    "start": start,
+                    "end": end,
+                    "summary": None,
+                    "video_analysis": [],
+                }
+
+            if "attr" in meta:
+                # Per-attribute document
+                content = r.field("content")
+                attr = meta["attr"]
+                prefix = f"{attr}: "
+                value = content[len(prefix) :] if content.startswith(prefix) else content
+                segments[key]["video_analysis"].append({"attr": attr, "value": value})
+            elif "summary" in meta:
+                # Main document with summary
+                segments[key]["summary"] = meta["summary"]
+
+        sorted_segments = sorted(segments.values(), key=lambda s: s["start"])
+        duration = max(s["end"] for s in sorted_segments) if sorted_segments else 0
+        return {
+            "video_id": video_id,
+            "duration": duration,
+            "video_descriptions": sorted_segments,
+            "segments_count": len(sorted_segments),
+        }
+
     # ------------------------------------------------------------------
     # Delete
     # ------------------------------------------------------------------
 
     def delete_by_video(self, video_id: str) -> None:
-        """Delete all documents and registry entry for *video_id*."""
+        """Delete all documents for *video_id*."""
         try:
-            self.collection.delete_by_filter(filter=f"video_id == {video_id}")
+            self.collection.delete_by_filter(filter=f"video_id = '{video_id}'")
         except Exception as e:
             logger.error(f"Error deleting video_index docs for video_id={video_id}: {e}")
-        self.unregister(video_id)
 
     def delete(self, doc_id: str) -> None:
         """Delete a single document by ID."""
@@ -394,7 +428,6 @@ async def index_video(
 
     video_id = uuid(16)
     indexed = await vi.index_video_result(result, video_id=video_id)
-    vi.register(video_id)
 
     return video_id, indexed, result
 

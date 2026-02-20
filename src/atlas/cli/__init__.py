@@ -56,6 +56,9 @@ from .cmd_explore import (  # noqa: E402
     _cmd_chat as _cmd_chat,
 )
 from .cmd_explore import (
+    _cmd_get_data as _cmd_get_data,
+)
+from .cmd_explore import (
     _cmd_list_chat as _cmd_list_chat,
 )
 from .cmd_explore import (

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import argparse
 
-from .cmd_explore import _cmd_chat, _cmd_list_chat, _cmd_list_videos, _cmd_search, _cmd_stats
+from .cmd_explore import _cmd_chat, _cmd_get_data, _cmd_list_chat, _cmd_list_videos, _cmd_search, _cmd_stats
 from .cmd_media import _cmd_extract, _cmd_index, _cmd_transcribe
 
 VERSION = "0.1.0"
@@ -49,10 +49,11 @@ def _build_parser() -> argparse.ArgumentParser:
             "Examples:\n"
             "  atlas transcribe video.mp4\n"
             "  atlas extract video.mp4 --chunk-duration=15s\n"
-            "  atlas index video.mp4 ./my_index\n"
+            "  atlas index video.mp4\n"
             "  atlas search 'people discussing AI'\n"
-            "  atlas search 'people discussing AI' --video-id abc123\n"
+            "  atlas search abc123 'people discussing AI'\n"
             "  atlas chat abc123 'What is this video about?'\n"
+            "  atlas get-video abc123\n"
             "  atlas list-videos\n"
             "  atlas list-chat abc123\n"
             "  atlas stats\n"
@@ -167,23 +168,18 @@ def _build_parser() -> argparse.ArgumentParser:
         "search",
         help="Search indexed videos semantically.",
         description="Run a natural-language query against previously indexed videos.",
-        epilog=(
-            "Examples:\n  atlas search 'people discussing AI'\n  atlas search 'people discussing AI' --video-id abc123"
-        ),
+        epilog=("Examples:\n  atlas search 'people discussing AI'\n  atlas search abc123 'people discussing AI'"),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         parents=[_shared],
     )
-    p_search.add_argument("query", help="Natural-language search query.")
     p_search.add_argument(
-        "--top-k", "-k", type=int, default=10, metavar="N", help="Number of results to return (default: 10)."
+        "search_args",
+        nargs="+",
+        metavar="ARG",
+        help="[VIDEO_ID] QUERY — optional video ID followed by a natural-language query.",
     )
     p_search.add_argument(
-        "--video-id",
-        "-v",
-        default=None,
-        metavar="ID",
-        dest="video_id",
-        help="Filter results to a specific video ID (returned by 'atlas index').",
+        "--top-k", "-k", type=int, default=10, metavar="N", help="Number of results to return (default: 10)."
     )
     p_search.set_defaults(func=_cmd_search)
 
@@ -262,6 +258,21 @@ def _build_parser() -> argparse.ArgumentParser:
         parents=[_shared],
     )
     p_stats.set_defaults(func=_cmd_stats)
+
+    # ── get-video ─────────────────────────────────────────────────────────
+    p_get_video = sub.add_parser(
+        "get-video",
+        help="Retrieve all indexed data for a video.",
+        description=(
+            "Fetch all stored data for a video ID and return it in the same shape as the 'extract' command.\n"
+            "Outputs JSON to stdout, or to a file with --output."
+        ),
+        epilog="Examples:\n  atlas get-video abc123\n  atlas get-video abc123 --output data.json",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    p_get_video.add_argument("video_id", help="Video ID returned by 'atlas index'.")
+    p_get_video.add_argument("--output", "-o", metavar="FILE", help="Save JSON output to this file.")
+    p_get_video.set_defaults(func=_cmd_get_data)
 
     # ── queue ─────────────────────────────────────────────────────────
     from ..task_queue import add_queue_commands as _add_queue_commands

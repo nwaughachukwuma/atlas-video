@@ -198,8 +198,23 @@ class VideoProcessor(MediaFileManager, GeminiMediaEngine):
             logger.error(f"Error analyzing video chunk: {e}")
             result = []
 
+        summary = None
+        if self.include_summary and result:
+            descriptions_text = "\n".join(f"{a.attr}: {a.value}" for a in result if a.value.strip())
+            if descriptions_text.strip():
+                try:
+                    from .prompts import summarize_descriptions_prompt
+
+                    summary = await self.generate_summary(
+                        descriptions_text,
+                        summarize_descriptions_prompt(descriptions_text),
+                    )
+                except Exception as e:
+                    logger.error(f"Error generating summary for chunk {chunk.start:.1f}–{chunk.end:.1f}s: {e}")
+
         return VideoDescription(
             start=chunk.start,
             end=chunk.end,
+            summary=summary,
             video_analysis=result,
         )

@@ -3,6 +3,8 @@ Unit tests for atlas.vector_store — VideoIndex and VideoChat collections.
 """
 # ruff: noqa: D102
 
+from unittest.mock import MagicMock, patch
+
 from src.atlas.utils import VideoAttrAnalysis
 from src.atlas.vector_store import (
     ChatDocument,
@@ -168,10 +170,6 @@ class TestVideoIndex:
         vi = VideoIndex(col_path=tmp_path / "vi", embedding_dim=3072)
         assert vi.embedding_dim == 3072
 
-    def test_registry_path(self, tmp_path):
-        vi = VideoIndex(col_path=tmp_path / "video_index")
-        assert vi._registry_path == tmp_path / "video_index" / "registry.json"
-
     def test_uuid(self, tmp_path):
         vi = VideoIndex(col_path=tmp_path / "video_index")
         doc_id = vi._uuid()
@@ -193,32 +191,84 @@ class TestVideoIndex:
 
     def test_list_videos_empty(self, tmp_path):
         vi = VideoIndex(col_path=tmp_path / "video_index")
-        assert vi.list_videos() == []
+        mock_col = MagicMock()
+        mock_col.query.return_value = []
+        vi._collection = mock_col
+        with patch("src.atlas.vector_store.video_index.make_vector_query", return_value=MagicMock()):
+            assert vi.list_videos() == []
 
-    def test_register_and_list(self, tmp_path):
+    def test_list_videos_deduplicates(self, tmp_path):
         vi = VideoIndex(col_path=tmp_path / "video_index")
-        vi.col_path.mkdir(parents=True, exist_ok=True)
-        vi.register("vid_001")
-        vi.register("vid_002")
-        # Duplicate should be ignored
-        vi.register("vid_001")
+        mock_col = MagicMock()
+        r1 = MagicMock()
+        r1.field.side_effect = lambda f: {
+            "video_id": "vid_001",
+            "metadata": '{"indexed_at": "2026-01-01T00:00:00"}',
+        }[f]
+        r2 = MagicMock()
+        r2.field.side_effect = lambda f: {
+            "video_id": "vid_001",
+            "metadata": '{"indexed_at": "2026-01-01T00:01:00"}',
+        }[f]
+        r3 = MagicMock()
+        r3.field.side_effect = lambda f: {
+            "video_id": "vid_002",
+            "metadata": '{"indexed_at": "2026-01-02T00:00:00"}',
+        }[f]
+        mock_col.query.return_value = [r1, r2, r3]
+        vi._collection = mock_col
 
-        videos = vi.list_videos()
+        with patch("src.atlas.vector_store.video_index.make_vector_query", return_value=MagicMock()):
+            videos = vi.list_videos()
         ids = [v.video_id for v in videos]
         assert "vid_001" in ids
         assert "vid_002" in ids
         assert ids.count("vid_001") == 1
+        # Should keep earliest timestamp
+        vid_001 = next(v for v in videos if v.video_id == "vid_001")
+        assert vid_001.indexed_at == "2026-01-01T00:00:00"
 
-    def test_unregister(self, tmp_path):
+    def test_get_video_data(self, tmp_path):
         vi = VideoIndex(col_path=tmp_path / "video_index")
-        vi.col_path.mkdir(parents=True, exist_ok=True)
-        vi.register("vid_001")
-        vi.register("vid_002")
-        vi.unregister("vid_001")
+        mock_col = MagicMock()
+        # Main document (no attr)
+        r_main = MagicMock()
+        r_main.field.side_effect = lambda f: {
+            "start": 0.0,
+            "end": 10.0,
+            "video_id": "vid_001",
+            "content": "VISUAL CUES: walking\nAUDIO ANALYSIS: music",
+            "metadata": '{"duration": 10.0, "indexed_at": "2026-01-01", "summary": "A person walks with music."}',
+        }[f]
+        # Per-attribute document
+        r_attr = MagicMock()
+        r_attr.field.side_effect = lambda f: {
+            "start": 0.0,
+            "end": 10.0,
+            "video_id": "vid_001",
+            "content": "visual_cues: A person walking in a park",
+            "metadata": '{"duration": 10.0, "indexed_at": "2026-01-01", "attr": "visual_cues"}',
+        }[f]
+        mock_col.query.return_value = [r_main, r_attr]
+        vi._collection = mock_col
 
-        ids = [v.video_id for v in vi.list_videos()]
-        assert "vid_001" not in ids
-        assert "vid_002" in ids
+        with patch("src.atlas.vector_store.video_index.make_vector_query", return_value=MagicMock()):
+            data = vi.get_video_data("vid_001")
+        assert data is not None
+        assert data["video_id"] == "vid_001"
+        assert data["segments_count"] == 1
+        seg = data["video_descriptions"][0]
+        assert seg["summary"] == "A person walks with music."
+        assert len(seg["video_analysis"]) == 1
+        assert seg["video_analysis"][0]["attr"] == "visual_cues"
+
+    def test_get_video_data_not_found(self, tmp_path):
+        vi = VideoIndex(col_path=tmp_path / "video_index")
+        mock_col = MagicMock()
+        mock_col.query.return_value = []
+        vi._collection = mock_col
+        with patch("src.atlas.vector_store.video_index.make_vector_query", return_value=MagicMock()):
+            assert vi.get_video_data("nonexistent") is None
 
     def testdefault_video_index_helper(self):
         vi = default_video_index()
@@ -239,18 +289,27 @@ class TestVideoChat:
         assert vc.embedding_dim == 768
         assert vc.col_path == tmp_path / "video_chat"
 
-    def test_sidecar_path(self, tmp_path):
+    def test_get_history_from_zvec(self, tmp_path):
         vc = VideoChat(col_path=tmp_path / "video_chat")
-        vc.col_path.mkdir(parents=True, exist_ok=True)
-        path = vc._sidecar_path("vid_xyz")
-        assert path == tmp_path / "video_chat" / "logs" / "vid_xyz.jsonl"
+        mock_col = MagicMock()
+        r1 = MagicMock()
+        r1.field.side_effect = lambda f: {
+            "role": "user",
+            "content": "Hello, what is this video?",
+            "metadata": '{"timestamp": "2026-01-01T00:00:00"}',
+        }[f]
+        r2 = MagicMock()
+        r2.field.side_effect = lambda f: {
+            "role": "assistant",
+            "content": "This video shows a park scene.",
+            "metadata": '{"timestamp": "2026-01-01T00:00:01"}',
+        }[f]
+        # Return out of order to test sorting
+        mock_col.query.return_value = [r2, r1]
+        vc._collection = mock_col
 
-    def test_append_and_get_history(self, tmp_path):
-        vc = VideoChat(col_path=tmp_path / "video_chat")
-        vc.append_to_history("vid_xyz", "user", "Hello, what is this video?")
-        vc.append_to_history("vid_xyz", "assistant", "This video shows a park scene.")
-
-        history = vc.get_history("vid_xyz")
+        with patch("src.atlas.vector_store.video_chat.make_vector_query", return_value=MagicMock()):
+            history = vc.get_history("vid_xyz")
         assert len(history) == 2
         assert history[0]["role"] == "user"
         assert history[1]["role"] == "assistant"
@@ -258,16 +317,31 @@ class TestVideoChat:
 
     def test_get_history_empty(self, tmp_path):
         vc = VideoChat(col_path=tmp_path / "video_chat")
-        history = vc.get_history("nonexistent_video")
+        mock_col = MagicMock()
+        mock_col.query.return_value = []
+        vc._collection = mock_col
+        with patch("src.atlas.vector_store.video_chat.make_vector_query", return_value=MagicMock()):
+            history = vc.get_history("nonexistent_video")
         assert history == []
 
     def test_get_history_last_n(self, tmp_path):
         vc = VideoChat(col_path=tmp_path / "video_chat")
-        for i in range(10):
-            vc.append_to_history("vid_xyz", "user", f"Question {i}")
-            vc.append_to_history("vid_xyz", "assistant", f"Answer {i}")
+        mock_col = MagicMock()
+        results = []
+        for i in range(20):
+            r = MagicMock()
+            role = "user" if i % 2 == 0 else "assistant"
+            r.field.side_effect = lambda f, _i=i, _role=role: {
+                "role": _role,
+                "content": f"Message {_i}",
+                "metadata": f'{{"timestamp": "2026-01-01T00:00:{_i:02d}"}}',
+            }[f]
+            results.append(r)
+        mock_col.query.return_value = results
+        vc._collection = mock_col
 
-        history = vc.get_history("vid_xyz", last_n=6)
+        with patch("src.atlas.vector_store.video_chat.make_vector_query", return_value=MagicMock()):
+            history = vc.get_history("vid_xyz", last_n=6)
         assert len(history) == 6
 
     def testdefault_video_chat_helper(self):

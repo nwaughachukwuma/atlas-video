@@ -24,6 +24,7 @@ from atlas.cli import (
     _build_parser,
     _cmd_chat,
     _cmd_extract,
+    _cmd_get_data,
     _cmd_index,
     _cmd_list_chat,
     _cmd_list_videos,
@@ -80,6 +81,7 @@ class TestParserConstruction:
             "list-chat",
             "stats",
             "queue",
+            "get-video",
         }
 
     # ---- extract ----
@@ -133,18 +135,34 @@ class TestParserConstruction:
         assert ns.overlap == "2s"
         assert ns.embedding_dim == 3072
 
+    # ---- get-video ----
+
+    def test_video_get_data_defaults(self, parser):
+        ns = parser.parse_args(["get-video", "vid1"])
+        assert ns.video_id == "vid1"
+        assert ns.output is None
+
+    def test_video_get_data_with_output(self, parser):
+        ns = parser.parse_args(["get-video", "vid1", "-o", "out.json"])
+        assert ns.video_id == "vid1"
+        assert ns.output == "out.json"
+
     # ---- search ----
 
     def test_search_defaults(self, parser):
         ns = parser.parse_args(["search", "hello world"])
-        assert ns.query == "hello world"
+        assert ns.search_args == ["hello world"]
         assert ns.top_k == 10
-        assert ns.video_id is None
+
+    def test_search_with_video_id(self, parser):
+        ns = parser.parse_args(["search", "vid1", "hello world"])
+        assert ns.search_args == ["vid1", "hello world"]
+        assert ns.top_k == 10
 
     def test_search_custom_flags(self, parser):
-        ns = parser.parse_args(["search", "q", "-k", "5", "-v", "vid1"])
+        ns = parser.parse_args(["search", "vid1", "q", "-k", "5"])
         assert ns.top_k == 5
-        assert ns.video_id == "vid1"
+        assert ns.search_args == ["vid1", "q"]
 
     # ---- transcribe ----
 
@@ -214,6 +232,7 @@ class TestParserConstruction:
             "list-videos": (_cmd_list_videos, ["list-videos"]),
             "list-chat": (_cmd_list_chat, ["list-chat", "vid1"]),
             "stats": (_cmd_stats, ["stats"]),
+            "get-video": (_cmd_get_data, ["get-video", "vid1"]),
         }
         for cmd_name, (expected_fn, argv) in mapping.items():
             ns = parser.parse_args(argv)
@@ -390,10 +409,10 @@ class TestCmdIndex:
 
 class TestCmdSearch:
     def _args(self, query="people talking", top_k=5, video_id=None):
+        search_args = [video_id, query] if video_id else [query]
         return argparse.Namespace(
-            query=query,
+            search_args=search_args,
             top_k=top_k,
-            video_id=video_id,
             benchmark=False,
         )
 
@@ -566,6 +585,55 @@ class TestCmdStats:
         ):
             with pytest.raises(RuntimeError, match="zvec unavail"):
                 _cmd_stats(self._args())
+
+
+# ---------------------------------------------------------------------------
+# TestCmdGetData
+# ---------------------------------------------------------------------------
+
+
+class TestCmdGetData:
+    def _args(self, video_id="vid1", output=None):
+        return argparse.Namespace(video_id=video_id, output=output, benchmark=False)
+
+    def test_success_prints_json(self, capsys, progress_ctx):
+        mock_vi = MagicMock()
+        mock_vi.get_video_data.return_value = {
+            "video_id": "vid1",
+            "duration": 30.0,
+            "video_descriptions": [{"start": 0.0, "end": 10.0, "summary": None, "video_analysis": []}],
+            "segments_count": 1,
+        }
+        with (
+            patch("atlas.vector_store.video_index.default_video_index", return_value=mock_vi),
+            patch("atlas.cli.cmd_explore._make_progress", return_value=progress_ctx),
+        ):
+            _cmd_get_data(self._args())
+        captured = capsys.readouterr()
+        data = json.loads(captured.out)
+        assert data["video_id"] == "vid1"
+        assert data["segments_count"] == 1
+
+    def test_no_data_found(self):
+        mock_vi = MagicMock()
+        mock_vi.get_video_data.return_value = None
+        with patch("atlas.vector_store.video_index.default_video_index", return_value=mock_vi):
+            _cmd_get_data(self._args())
+
+    def test_saves_to_file(self, tmp_path):
+        mock_vi = MagicMock()
+        mock_vi.get_video_data.return_value = {
+            "video_id": "vid1",
+            "duration": 30.0,
+            "video_descriptions": [],
+            "segments_count": 0,
+        }
+        out = tmp_path / "out.json"
+        with patch("atlas.vector_store.video_index.default_video_index", return_value=mock_vi):
+            _cmd_get_data(self._args(output=str(out)))
+        assert out.exists()
+        data = json.loads(out.read_text())
+        assert data["video_id"] == "vid1"
 
 
 # ---------------------------------------------------------------------------

@@ -2,15 +2,13 @@
 VideoChat — chat history collection (role=user|assistant) per video.
 
 Each chat turn is embedded and stored in the zvec collection for semantic
-retrieval, while a JSONL sidecar preserves ordered chronological history
-for efficient tail reads.
+retrieval, with chronological ordering via timestamp metadata.
 
 Public API
 ----------
 VideoChat.index_message(video_id, role, content)  — embed + store one turn
 VideoChat.search(query, video_id, ...)            — semantic retrieval
-VideoChat.append_to_history(video_id, role, content) — write to JSONL sidecar
-VideoChat.get_history(video_id, last_n)           — read from JSONL sidecar
+VideoChat.get_history(video_id, last_n)           — read ordered history from zvec
 """
 
 from __future__ import annotations
@@ -69,27 +67,15 @@ class ChatResult(BaseModel):
 
 
 class VideoChat(BaseCollection):
-    """Manages the video_chat zvec collection and the JSONL history sidecar.
+    """Manages the video_chat zvec collection.
 
-    Owns both the zvec collection (semantic embeddings) and the per-video
-    JSONL sidecar files that store ordered chat history for efficient
-    chronological reads.
+    Owns the zvec collection (semantic embeddings) that stores per-video
+    chat history with chronological ordering via timestamp metadata.
 
     Args:
         col_path: Directory for this collection (e.g. ~/.atlas/index/video_chat).
         embedding_dim: Embedding dimension — 768 or 3072.
     """
-
-    # Chat logs live inside the collection directory
-    @property
-    def _logs_dir(self) -> Path:
-        logs = self.col_path / "logs"
-        logs.mkdir(parents=True, exist_ok=True)
-        return logs
-
-    def _sidecar_path(self, video_id: str) -> Path:
-        """Path to the JSONL history file for *video_id*."""
-        return self._logs_dir / f"{video_id}.jsonl"
 
     # ------------------------------------------------------------------
     # Schema
@@ -145,26 +131,14 @@ class VideoChat(BaseCollection):
         )
 
     # ------------------------------------------------------------------
-    # JSONL sidecar — ordered history
+    # Read — chat history
     # ------------------------------------------------------------------
-
-    def append_to_history(self, video_id: str, role: ChatRole, content: str) -> None:
-        """Append one message to the JSONL chronological log."""
-        entry = json.dumps(
-            {
-                "role": role,
-                "content": content,
-                "timestamp": datetime.now().isoformat(),
-            }
-        )
-        with self._sidecar_path(video_id).open("a") as f:
-            f.write(entry + "\n")
 
     def get_history(self, video_id: str, last_n=20) -> List[Dict]:
         """Return the *last_n* most recent messages in chronological order.
 
-        Uses the JSONL sidecar for O(last_n) tail read rather than a full
-        zvec scan.
+        Queries the zvec collection filtered by *video_id* and sorts by
+        timestamp stored in document metadata.
 
         Args:
             video_id: The video whose history to retrieve.
@@ -173,18 +147,28 @@ class VideoChat(BaseCollection):
         Returns:
             List of dicts with keys: role, content, timestamp.
         """
-        sidecar = self._sidecar_path(video_id)
-        if not sidecar.exists():
+        try:
+            results = self.collection.query(
+                filter=f"video_id = '{video_id}'",
+                topk=min(max(last_n * 10, 200), 1024),
+            )
+        except Exception as e:
+            logger.error(f"Error fetching chat history from zvec: {e}")
             return []
-        lines = sidecar.read_text().strip().splitlines()
-        recent = lines[-last_n:] if len(lines) > last_n else lines
-        result = []
-        for line in recent:
-            try:
-                result.append(json.loads(line))
-            except Exception:
-                pass
-        return result
+
+        messages = []
+        for r in results:
+            meta = json.loads(r.field("metadata"))
+            messages.append(
+                {
+                    "role": r.field("role"),
+                    "content": r.field("content"),
+                    "timestamp": meta.get("timestamp", ""),
+                }
+            )
+
+        messages.sort(key=lambda m: m.get("timestamp", ""))
+        return messages[-last_n:] if len(messages) > last_n else messages
 
     # ------------------------------------------------------------------
     # Write — zvec collection
@@ -229,15 +213,14 @@ class VideoChat(BaseCollection):
         role: ChatRole,
         content: str,
     ) -> str:
-        """Persist a single chat turn to both the sidecar and the zvec collection.
+        """Persist a single chat turn to the zvec collection.
 
         This is the preferred write path — callers (e.g. chat_handler) should
-        call this rather than managing sidecar + index_message separately.
+        call this rather than managing index_message separately.
 
         Returns:
             Document ID of the inserted message.
         """
-        self.append_to_history(video_id, role, content)
         return await self.index_message(video_id, role, content)
 
     # ------------------------------------------------------------------
@@ -267,7 +250,7 @@ class VideoChat(BaseCollection):
         query_embedding = await embed_text_async(query, self.embedding_dim)
         try:
             vector_query = make_vector_query(query_embedding)
-            filter = f"video_id == {video_id} AND role == {role}" if role else f"video_id == {video_id}"
+            filter = f"video_id = '{video_id}' AND role = '{role}'" if role else f"video_id = '{video_id}'"
             results = self.collection.query(
                 vector_query,
                 topk=top_k,
