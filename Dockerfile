@@ -47,7 +47,7 @@ USER atlas
 WORKDIR /home/atlas
 
 # ── Install atlas wheel ──────────────────────────────────────────────────────
-COPY --from=builder /dist/*.whl /tmp/
+COPY --chown=atlas:atlas --from=builder /dist/*.whl /tmp/
 RUN pip install --no-cache-dir --user /tmp/*.whl \
  && rm /tmp/*.whl
 

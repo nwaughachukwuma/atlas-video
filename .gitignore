@@ -1,6 +1,6 @@
 __pycache__
 .DS_Store
-sample_files/
+sample_files
 .env
 .coverage
-product-video/
+product-video
