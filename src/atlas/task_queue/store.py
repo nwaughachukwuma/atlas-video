@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS tasks (
 
 
 class TaskStore:
-    """SQLite-backed task store.  WAL mode allows concurrent reads from any thread."""
+    """SQLite-backed task store. WAL mode allows concurrent reads from any thread."""
 
     def __init__(self, db_path: Path = DB_PATH) -> None:
         self.db_path = db_path
@@ -62,9 +62,9 @@ class TaskStore:
         try:
             yield conn
             conn.commit()
-        except Exception:
+        except Exception as e:
             conn.rollback()
-            raise
+            raise e
 
     # ── mutations ─────────────────────────────────────────────────────
 

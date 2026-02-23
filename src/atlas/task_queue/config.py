@@ -33,7 +33,7 @@ RESULTS_DIR = QUEUE_DIR / "queued_tasks" / "results"
 # ── Retention limits ──────────────────────────────────────────────────────────
 
 MAX_FAILED_TASKS = 50
-MAX_COMPLETED_TASKS = 25
+MAX_COMPLETED_TASKS = 50
 
 
 # ── Task status ───────────────────────────────────────────────────────────────

@@ -8,6 +8,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any, List, Optional
+from uuid import uuid4
 
 from .config import (
     DEFAULT_WORKERS,
@@ -51,7 +52,7 @@ class TaskQueue:
         self._store = TaskStore(db_path) if db_path else TaskStore()
         self._max_workers = min(max_workers, MAX_WORKERS)
 
-        # Clean up leftovers from a crashed previous session.  Only marks
+        # Clean up leftovers from a crashed previous session. Only marks
         # tasks that have been pending/running far longer than the timeout
         # so we never nuke a task that a live worker is still processing.
         self._recover_stale()
@@ -67,14 +68,12 @@ class TaskQueue:
         output_path: Optional[str] = None,
         benchmark: bool = False,
     ) -> str:
-        """Enqueue a task.  Returns a short task ID.
+        """Enqueue a task. Returns a short task ID.
 
         *args* must be an ``argparse.Namespace`` (or any object whose
-        ``vars()`` produces a JSON-serialisable dict).  The worker
+        ``vars()`` produces a JSON-serialisable dict). The worker
         subprocess reconstructs it and dispatches based on *command*.
         """
-        from uuid import uuid4
-
         task_id = uuid4().hex[:8]
         label = label or command
 

@@ -16,9 +16,11 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import sys
 import threading
 from pathlib import Path
+from time import perf_counter
 
 from .config import RESULTS_DIR, TASK_TIMEOUT
 from .helpers import serialize_result, write_file
@@ -152,8 +154,6 @@ def run_task(task_id: str) -> None:
     store.mark_running(task_id)
     logger.info("Worker started for task %s (%s)", task_id, command)
 
-    from time import perf_counter
-
     t_start = perf_counter()
     # Enforce a hard timeout via a watchdog thread.
     timed_out = threading.Event()
@@ -174,8 +174,6 @@ def run_task(task_id: str) -> None:
             logger.error("Task %s timed out after %ds", task_id, TASK_TIMEOUT)
             _trigger_dispatch()
             # Hard-exit the worker process.
-            import os
-
             os._exit(1)
 
     timer = threading.Thread(target=_watchdog, daemon=True, name="atlas-watchdog")
