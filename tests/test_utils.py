@@ -188,7 +188,7 @@ class TestProcessTime:
     def test_logs_time(self):
         """Test that process_time logs execution time"""
 
-        @process_time()
+        @process_time(debug=True)
         def test_func():
             return "result"
 
@@ -202,7 +202,7 @@ class TestProcessTime:
     async def test_async_process_time(self):
         """Test that process_time works with async functions"""
 
-        @process_time()
+        @process_time(debug=True)
         async def async_test_func():
             return "async_result"
 
