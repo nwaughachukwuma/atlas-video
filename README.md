@@ -13,7 +13,7 @@
 - 🔍 **Semantic Search**: Index videos and search through content semantically using a local vector store (powered by [zvec](https://github.com/alibaba/zvec))
 - 💬 **Video Chat**: Ask questions about indexed videos; context is drawn from the vector store and prior conversation history
 - 🤖 **Powered by Gemini**: Uses Google's Gemini models for multimodal analysis and embeddings
-- 🎙️ **Groq Whisper Transcription**: High-quality full-video transcription via the `transcribe` command
+- 🎙️ **Groq Whisper Transcription**: High-quality fast-video transcription via the `transcribe` command
 - 💻 **CLI First**: Clean, ergonomic command-line interface
 - 🔒 **Local by default**: Vector index stored on disk (`~/.atlas/index`); your videos never leave your machine
 
@@ -38,7 +38,115 @@ cd atlas
 pip install -e ".[dev]"
 ```
 
-## Quick Start
+## Docker
+
+> **Zero-setup option** — no Python, no ffmpeg, no dependencies. Just Docker and your API keys.
+
+[![Docker Hub](https://img.shields.io/docker/v/nwaughachukwuma/atlas-video?label=Docker%20Hub&logo=docker)](https://hub.docker.com/r/nwaughachukwuma/atlas-video)
+[![Platforms](https://img.shields.io/badge/platforms-linux%2Famd64%20%7C%20linux%2Farm64-blue)](https://hub.docker.com/r/nwaughachukwuma/atlas-video)
+
+### Pull the image
+
+```bash
+docker pull nwaughachukwuma/atlas-video
+# or pin to a specific version
+docker pull nwaughachukwuma/atlas-video:0.1.0
+```
+
+### Quick one-liner usage
+
+All configuration is passed via `-e` flags — fully [12-factor](https://12factor.net/config) compliant.
+
+```bash
+# Transcribe (Groq Whisper | Uses a Task Queue)
+docker run --rm -it \
+  -e GROQ_API_KEY="$GROQ_API_KEY" \
+  -v "$(pwd)/videos:/data" \
+  nwaughachukwuma/atlas-video transcribe /data/video.mp4
+
+# Transcribe (streams to terminal)
+docker run --rm -it \
+  -e GROQ_API_KEY="$GROQ_API_KEY" \
+  -v "$(pwd)/videos:/data" \
+  nwaughachukwuma/atlas-video transcribe /data/video.mp4 --no-queue
+
+# Extract insights
+docker run --rm -it \
+  -e GEMINI_API_KEY="$GEMINI_API_KEY" \
+  -v "$(pwd)/videos:/data" \
+  nwaughachukwuma/atlas-video extract /data/video.mp4
+
+# Index a video (persist the vector store with a named volume)
+docker run --rm -it \
+  -e GEMINI_API_KEY="$GEMINI_API_KEY" \
+  -v atlas-data:/home/atlas/.atlas \
+  -v "$(pwd)/videos:/data" \
+  nwaughachukwuma/atlas-video index /data/video.mp4 --benchmark
+
+# Semantic search
+docker run --rm -it \
+  -e GEMINI_API_KEY="$GEMINI_API_KEY" \
+  nwaughachukwuma/atlas-video search "machine learning demo"
+
+# list all indexed videos
+docker run --rm -it \
+  nwaughachukwuma/atlas-video list-videos
+
+# Chat with an indexed video
+docker run --rm -it \
+  -e GEMINI_API_KEY="$GEMINI_API_KEY" \
+  nwaughachukwuma/atlas-video chat <video_id> "What topics are covered?"
+
+
+# See all commands
+docker run --rm nwaughachukwuma/atlas-video --help
+# See version
+docker run --rm nwaughachukwuma/atlas-video --version
+# list queued tasks
+docker run --rm nwaughachukwuma/atlas-video queue list
+```
+
+### Environment variables
+
+| Variable           | Required for                         | Description                                                       |
+| ------------------ | ------------------------------------ | ----------------------------------------------------------------- |
+| `GEMINI_API_KEY`   | `extract`, `index`, `search`, `chat` | [Google AI Studio](https://aistudio.google.com/app/apikey)        |
+| `GROQ_API_KEY`     | `transcribe`, `extract`, `index`     | [Groq Console](https://console.groq.com/keys)                     |
+| `ENABLE_LOGGING`   | optional                             | Set to `true` for verbose logging (default: `false`)              |
+| `ATLAS_INDEX_PATH` | optional                             | Override the vector store path (defaults to `/home/atlas/.atlas`) |
+
+### Persistent vector store
+
+The container stores its index at `/home/atlas/.atlas`. Mount a named Docker volume to persist data across runs:
+
+```bash
+# Create the volume once
+docker volume create atlas-data
+
+# All subsequent runs share the same index
+docker run --rm -it \
+  -e GEMINI_API_KEY="$GEMINI_API_KEY" \
+  -v atlas-data:/home/atlas/.atlas \
+  -v "$(pwd)/videos:/data" \
+  nwaughachukwuma/atlas-video index /data/my-video.mp4
+```
+
+### Using a `.env` file
+
+```bash
+# .env
+GEMINI_API_KEY=your-key-here
+GROQ_API_KEY=your-key-here
+ENABLE_LOGGING=false
+```
+
+```bash
+docker run --rm -it \
+  --env-file .env \
+  -v atlas-data:/home/atlas/.atlas \
+  -v "$(pwd)/videos:/data" \
+  nwaughachukwuma/atlas-video extract /data/video.mp4
+```
 
 ### 1. Set up API Keys
 
@@ -126,7 +234,7 @@ Options:
 | `audio_analysis`         | Speech, music, sound effects, ambience             |
 | `transcript`             | Verbatim spoken content (via Gemini within chunks) |
 
-> **Note on `transcript` in `extract`**: Within the chunked extract flow, all five attributes — including `transcript` — are handled concurrently by Gemini for maximum throughput. For a high-quality, full-video verbatim transcript use `atlas transcribe` (Groq Whisper).
+> **Note on `transcript` in `extract`**: Within the chunked extract flow, all five attributes — including `transcript` — are handled concurrently by Gemini for maximum throughput. For a high-quality, fast video transcript use `atlas transcribe` (Powereed by Groq Whisper).
 
 **Examples:**
 
@@ -333,8 +441,6 @@ atlas index video.mp4 --no-queue
 | `get-video`   | ❌ Not needed    | ❌ Not needed  |
 | `list-videos` | ❌ Not needed    | ❌ Not needed  |
 | `list-chat`   | ❌ Not needed    | ❌ Not needed  |
-| `stats`       | ❌ Not needed    | ❌ Not needed  |
-| `queue`       | ❌ Not needed    | ❌ Not needed  |
 
 ---
 

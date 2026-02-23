@@ -1,0 +1,167 @@
+name: Publish Docker image
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Image tag to publish (e.g. 0.1.0). Defaults to the version in pyproject.toml."
+        required: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Build & push multi-arch image to Docker Hub ───────────────────────────
+  docker:
+    name: Build & push (${{ matrix.platform }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm # native ARM runner — faster than QEMU
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Resolve image tag ────────────────────────────────────────────────
+      - name: Resolve image version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            # Strip leading "v" from "refs/tags/v1.2.3"
+            VERSION="${GITHUB_REF_NAME#v}"
+          elif [[ -n "${{ inputs.tag }}" ]]; then
+            VERSION="${{ inputs.tag }}"
+          else
+            # Fall back to the version in pyproject.toml
+            VERSION=$(python3 -c "import re; m=re.search(r'version\s*=\s*\"([^\"]+)\"', open('pyproject.toml').read()); print(m.group(1))")
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      # ── Docker setup ─────────────────────────────────────────────────────
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # ── Build & push platform-specific digest ────────────────────────────
+      # We build each platform separately (native runner → no QEMU emulation)
+      # then merge them into a single multi-arch manifest in the next job.
+      - name: Build and push digest
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          platforms: ${{ matrix.platform }}
+          push: true
+          provenance: false # keep digests simple; no SLSA provenance blob
+          outputs: type=image,name=${{ secrets.DOCKERHUB_USERNAME }}/atlas-video,push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.platform }}
+          build-args: |
+            VERSION=${{ steps.version.outputs.version }}
+          labels: |
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ github.event.head_commit.timestamp }}
+
+      - name: Export digest
+        run: |
+          mkdir -p /tmp/digests
+          DIGEST="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${DIGEST#sha256:}"
+          echo "Digest: ${DIGEST}"
+
+      - name: Upload digest artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: digest-${{ matrix.platform == 'linux/amd64' && 'amd64' || 'arm64' }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  # ── Merge platform digests into a single multi-arch manifest ─────────────
+  merge-manifest:
+    name: Create multi-arch manifest
+    runs-on: ubuntu-latest
+    needs: docker
+
+    steps:
+      - name: Download amd64 digest
+        uses: actions/download-artifact@v4
+        with:
+          name: digest-amd64
+          path: /tmp/digests
+
+      - name: Download arm64 digest
+        uses: actions/download-artifact@v4
+        with:
+          name: digest-arm64
+          path: /tmp/digests
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Resolve image version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          elif [[ -n "${{ inputs.tag }}" ]]; then
+            VERSION="${{ inputs.tag }}"
+          else
+            VERSION=$(python3 -c "import re; m=re.search(r'version\s*=\s*\"([^\"]+)\"', open('pyproject.toml').read()); print(m.group(1))")
+          fi
+          MAJOR_MINOR=$(echo "$VERSION" | cut -d. -f1,2)
+          MAJOR=$(echo "$VERSION" | cut -d. -f1)
+          echo "version=${VERSION}"        >> "$GITHUB_OUTPUT"
+          echo "major_minor=${MAJOR_MINOR}" >> "$GITHUB_OUTPUT"
+          echo "major=${MAJOR}"            >> "$GITHUB_OUTPUT"
+
+      - name: Create and push multi-arch manifest
+        run: |
+          IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/atlas-video"
+          VERSION="${{ steps.version.outputs.version }}"
+          MAJOR_MINOR="${{ steps.version.outputs.major_minor }}"
+          MAJOR="${{ steps.version.outputs.major }}"
+
+          # Collect the per-platform digests we uploaded
+          DIGESTS=$(ls /tmp/digests | xargs -I{} echo "${IMAGE}@sha256:{}")
+
+          docker buildx imagetools create \
+            --tag "${IMAGE}:${VERSION}" \
+            --tag "${IMAGE}:${MAJOR_MINOR}" \
+            --tag "${IMAGE}:${MAJOR}" \
+            --tag "${IMAGE}:latest" \
+            ${DIGESTS}
+
+          echo "✅ Pushed:"
+          echo "   ${IMAGE}:${VERSION}"
+          echo "   ${IMAGE}:${MAJOR_MINOR}"
+          echo "   ${IMAGE}:${MAJOR}"
+          echo "   ${IMAGE}:latest"
+
+      - name: Inspect final manifest
+        run: |
+          docker buildx imagetools inspect \
+            ${{ secrets.DOCKERHUB_USERNAME }}/atlas-video:latest

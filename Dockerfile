@@ -1,46 +1,75 @@
-# See this if you use mac x86_64 - Zvec doesn't compile on that arch.
-# You can choose to symlink to a volume so changes reflect immediately.
+# ─────────────────────────────────────────────────────────────────────────────
+# Atlas — Production multi-arch image
+# Docker Hub: nwaughachukwuma/atlas-video
 #
-# Development Dockerfile — linux/arm64
-#
-# Build: docker build --platform linux/arm64 -t atlas .
-#
-# Run (interactive dev shell, source already inside the image):
-#   docker run --platform linux/arm64 --rm -it \
-#     -v "$(pwd):/root/atlas" \
+# Pull & run (zero setup):
+#   docker pull nwaughachukwuma/atlas-video
+#   docker run --rm -it \
 #     -e GEMINI_API_KEY="$GEMINI_API_KEY" \
 #     -e GROQ_API_KEY="$GROQ_API_KEY" \
-#     atlas bash
+#     -v atlas-data:/home/atlas/.atlas \
+#     nwaughachukwuma/atlas-video extract /data/my-video.mp4
 #
-# Run a command directly:
-#   docker run --platform linux/arm64 --rm -it \
-#     -e GEMINI_API_KEY="$GEMINI_API_KEY" \
-#     -e GROQ_API_KEY="$GROQ_API_KEY" \
-#     atlas transcribe /root/atlas/sample_files/cedar.mp4
+# Platforms: linux/amd64, linux/arm64
+# ─────────────────────────────────────────────────────────────────────────────
 
-FROM --platform=linux/arm64 python:3.12-slim
+# ── Build stage: compile wheel from source ───────────────────────────────────
+FROM python:3.12-slim AS builder
+
+WORKDIR /build
+
+# Copy only the files needed to build the package
+COPY pyproject.toml README.md LICENSE ./
+COPY src/ ./src/
+
+RUN pip install --no-cache-dir build \
+ && python -m build --wheel --outdir /dist
+
+# ── Runtime stage ────────────────────────────────────────────────────────────
+FROM python:3.12-slim
+
+LABEL org.opencontainers.image.title="Atlas"
+LABEL org.opencontainers.image.description="Multimodal video understanding engine — extract, index, search, chat"
+LABEL org.opencontainers.image.source="https://github.com/nwaughachukwuma/atlas-video"
+LABEL org.opencontainers.image.licenses="Apache-2.0"
 
 # ── System dependencies ──────────────────────────────────────────────────────
-# ffmpeg: media processing (clipping, audio extraction)
-# libgomp1: OpenMP runtime required by some libs / ffmpeg operations
+# ffmpeg  : video clipping and audio extraction
+# libgomp1: OpenMP runtime (zvec / numpy dependency)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     libgomp1 \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+ && rm -rf /var/lib/apt/lists/*
 
-# ── Python tooling ───────────────────────────────────────────────────────────
-RUN pip install --no-cache-dir uv
+# ── Non-root user ────────────────────────────────────────────────────────────
+RUN useradd --create-home --shell /bin/bash atlas
+USER atlas
+WORKDIR /home/atlas
 
-# ── App source ───────────────────────────────────────────────────────────────
-WORKDIR /root/atlas
+# ── Install atlas wheel ──────────────────────────────────────────────────────
+COPY --from=builder /dist/*.whl /tmp/
+RUN pip install --no-cache-dir --user /tmp/*.whl \
+ && rm /tmp/*.whl
 
-COPY . .
+# Ensure ~/.local/bin (pip --user scripts) is on PATH
+ENV PATH="/home/atlas/.local/bin:${PATH}"
 
-RUN uv pip install --system --no-cache -e .
+# ── 12-factor configuration (all via ENV) ───────────────────────────────────
+# Required for extract / index / search / chat:
+ENV GEMINI_API_KEY=""
+# Required for transcribe / extract / index:
+ENV GROQ_API_KEY=""
+# Optional — set to "true" to enable verbose logging:
+ENV ENABLE_LOGGING="false"
 
-# ── Runtime ──────────────────────────────────────────────────────────────────
-# Persist the vector store outside the image layer.
-VOLUME ["/root/.atlas"]
-ENTRYPOINT ["atlas"]
+# ── Persistent vector store ──────────────────────────────────────────────────
+# Mount a named volume here so indexed data survives container restarts:
+#   docker run -v atlas-data:/home/atlas/.atlas ...
+VOLUME ["/home/atlas/.atlas"]
+
+# ── Entrypoint ───────────────────────────────────────────────────────────────
+COPY --chown=atlas:atlas docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["--help"]

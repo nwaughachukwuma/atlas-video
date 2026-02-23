@@ -1,46 +1,70 @@
 # Python
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
+
+**pycache**/
+_.py[cod]
+_.pyo
+_.pyd
 .Python
-*.egg-info/
+_.egg-info/
 dist/
 build/
 .eggs/
 
 # Virtual environments
+
 .venv/
 venv/
 env/
 
 # uv cache
+
 .uv/
+uv.lock
 
 # Test artifacts
+
+tests/
 .pytest_cache/
 .coverage
 htmlcov/
 .mypy_cache/
 .ruff_cache/
+pytest.ini
 
 # IDE / editor
+
 .vscode/
 .idea/
-*.swp
-*.swo
+_.swp
+_.swo
 
-# Git — not needed inside the image
+# Git — never needed inside the image
+
 .git/
 .gitignore
+.gitattributes
 
 # Secrets — never bake into the image
+
 .env
-*.env
+\*.env
 
 # OS
+
 .DS_Store
 Thumbs.db
 
-# uv lock (dependencies already pinned in pyproject.toml; uv resolves fresh)
-uv.lock
+# Atlas-specific: local data and generated indexes
+
+.atlas/
+
+# Sample/test media
+
+sample_files/
+product-video/
+
+# Docs and coverage reports
+
+docs/
+htmlcov/
+AGENT.md
