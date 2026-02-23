@@ -1,4 +1,4 @@
-# Atlas - Multimodal Video Understanding Engine
+# Atlas - Multimodal Video Understanding
 
 [![PyPI version](https://img.shields.io/pypi/v/atlas-video.svg)](https://pypi.org/project/atlas-video/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/atlas-video.svg)](https://pypi.org/project/atlas-video/)
@@ -10,7 +10,7 @@
 
 - 🎬 **Multimodal Analysis**: Extract visual cues, interactions, contextual information, audio analysis, and transcripts from videos
 - ⚡ **Real-time Streaming**: `extract` and `transcribe` stream results to the terminal as each segment completes — no waiting for the full video
-- 🔍 **Semantic Search**: Index videos and search through content semantically using a local vector store (powered by [zvec](https://zvec.dev))
+- 🔍 **Semantic Search**: Index videos and search through content semantically using a local vector store (powered by [zvec](https://github.com/alibaba/zvec))
 - 💬 **Video Chat**: Ask questions about indexed videos; context is drawn from the vector store and prior conversation history
 - 🤖 **Powered by Gemini**: Uses Google's Gemini models for multimodal analysis and embeddings
 - 🎙️ **Groq Whisper Transcription**: High-quality full-video transcription via the `transcribe` command
@@ -35,7 +35,7 @@ pip install atlas-video
 ```bash
 git clone https://github.com/nwaughachukwuma/atlas.git
 cd atlas
-pip install -e .
+pip install -e ".[dev]"
 ```
 
 ## Quick Start
@@ -45,6 +45,7 @@ pip install -e .
 ```bash
 export GEMINI_API_KEY=your-gemini-api-key   # required for extract, index, search, chat
 export GROQ_API_KEY=your-groq-api-key       # required only for `atlas transcribe`
+export ENABLE_LOGGING=true
 ```
 
 - Get a Gemini API key: [Google AI Studio](https://aistudio.google.com/app/apikey)

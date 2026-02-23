@@ -1,5 +1,5 @@
 """
-Tests for Atlas - Multimodal Video Understanding Engine
+Tests for Atlas - Multimodal Video Understanding
 """
 
 from dotenv import load_dotenv
