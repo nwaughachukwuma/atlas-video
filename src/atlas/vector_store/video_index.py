@@ -196,7 +196,7 @@ class VideoIndex(BaseCollection):
         Returns:
             Total number of documents inserted.
         """
-        from ..text_embedding import embed_text_async
+        from ..text_embedding import embed_text
 
         def _make_index_doc(
             desc: VideoDescription,
@@ -224,7 +224,7 @@ class VideoIndex(BaseCollection):
 
         async def _guarded_embed(content: str) -> List[float]:
             async with semaphore:
-                return await embed_text_async(content, self.embedding_dim)
+                return await embed_text(content, self.embedding_dim)
 
         async def _embed_description(desc: VideoDescription):
             content = self._create_searchable_content(desc).strip()
@@ -281,9 +281,9 @@ class VideoIndex(BaseCollection):
         Returns:
             List of SearchResult ordered by relevance.
         """
-        from ..text_embedding import embed_text_async
+        from ..text_embedding import embed_text
 
-        query_embedding = await embed_text_async(query, self.embedding_dim)
+        query_embedding = await embed_text(query, self.embedding_dim)
         try:
             vector_query = make_vector_query(query_embedding)
             if video_id:

@@ -66,7 +66,7 @@ class TestVideoIndexIntegration:
         # # on platforms where zvec is not installed (e.g. macOS x86_64).
         # mock_collection = MagicMock()
         with (
-            patch("atlas.text_embedding.embed_text_async", new_callable=AsyncMock, return_value=mock_embedding),
+            patch("atlas.text_embedding.embed_text", new_callable=AsyncMock, return_value=mock_embedding),
             # patch.object(type(vi), "collection", new_callable=PropertyMock, return_value=mock_collection),
             # patch.object(vi, "_make_doc", return_value=MagicMock()),
         ):
