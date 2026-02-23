@@ -1,4 +1,7 @@
-CONTAINER_NAME = jovial_keldysh
+# Name of your running dev container — override via env or CLI:
+#   CONTAINER_NAME=my_atlas make docker-test
+#   make docker-test CONTAINER_NAME=my_atlas
+CONTAINER_NAME ?= atlas-video
 IMAGE         = nwaughachukwuma/atlas-video
 VERSION      ?= $(shell python3 -c "import re; m=re.search(r'version\s*=\s*\"([^\"]+)\"', open('pyproject.toml').read()); print(m.group(1))" 2>/dev/null || echo "dev")
 PLATFORM     ?= linux/amd64,linux/arm64
