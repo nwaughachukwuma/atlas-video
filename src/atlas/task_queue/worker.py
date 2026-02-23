@@ -59,8 +59,13 @@ def _import_func(dotted_path: str):
     return getattr(module, func_name)
 
 
-def _write_benchmark(task_id: str) -> None:
-    """Write a benchmark summary as an ASCII table to benchmark.txt."""
+def _write_benchmark(task_id: str, total_s: float | None = None) -> None:
+    """Write a benchmark summary as an ASCII table to benchmark.txt.
+
+    Args:
+        task_id: The task whose result directory receives the file.
+        total_s: Optional wall-clock task runtime written below the table.
+    """
     try:
         from ..benchmark import registry
 
@@ -99,6 +104,8 @@ def _write_benchmark(task_id: str) -> None:
             *[_fmt_row(r) for r in rows],
             sep,
         ]
+        if total_s is not None:
+            lines.append(f"\nTotal runtime: {total_s:.2f}s")
         write_file(RESULTS_DIR / task_id / "benchmark.txt", "\n".join(lines))
     except Exception as exc:
         logger.warning("Failed to write benchmark for task %s: %s", task_id, exc)
@@ -145,6 +152,9 @@ def run_task(task_id: str) -> None:
     store.mark_running(task_id)
     logger.info("Worker started for task %s (%s)", task_id, command)
 
+    from time import perf_counter
+
+    t_start = perf_counter()
     # Enforce a hard timeout via a watchdog thread.
     timed_out = threading.Event()
 
@@ -182,7 +192,7 @@ def run_task(task_id: str) -> None:
         if output_path:
             write_file(Path(output_path), content)
         if benchmark:
-            _write_benchmark(task_id)
+            _write_benchmark(task_id, total_s=perf_counter() - t_start)
         notify(
             "Atlas Task Status",
             f"[completed]: {command} ({task_id}) finished successfully",
