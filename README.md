@@ -460,4 +460,4 @@ Contributions welcome — please open a PR.
 
 ## Credits
 
-Atlas was originally developed at [VeedoAI](https://veedoai.com) and is now open-sourced for the community.
+Atlas was originally developed at [VeedoAI](https://veedo.ai) and is now open-sourced for the community.
