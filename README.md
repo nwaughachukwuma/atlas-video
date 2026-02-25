@@ -6,6 +6,8 @@
 
 **Atlas** is an open-source multimodal insights engine for video understanding. Extract rich semantic insights from videos using AI, index them in a local vector store, and chat with your video content — all from the terminal.
 
+https://github.com/user-attachments/assets/d28fb343-5c74-462f-996e-f0e5dc51cdf8
+
 ## Features
 
 - 🎬 **Multimodal Analysis**: Extract visual cues, interactions, contextual information, audio analysis, and transcripts from videos
