@@ -81,7 +81,6 @@ async def _stream_response(
     extra_context: list[str],
 ) -> AsyncGenerator[str, None]:
     """Build a system prompt and stream Gemini response.
-
     Args:
         query: The user's question.
         video_context: Snippets from video_index retrieval.

@@ -455,6 +455,70 @@ atlas index video.mp4 --no-queue
 
 ---
 
+### `atlas serve`
+
+Start an HTTP API server that exposes all Atlas commands as REST endpoints. Useful for integrating Atlas into a backend service or running it behind a reverse proxy.
+
+```
+atlas serve [OPTIONS]
+
+Options:
+  -H, --host HOST        Host interface to bind [default: 0.0.0.0]
+  -p, --port PORT        Port to listen on [default: 8000]
+      --env-file PATH    Load environment variables from a .env file before starting
+```
+
+**Examples:**
+
+```bash
+# Start with defaults
+atlas serve
+
+# Bind to localhost only, custom port
+atlas serve -H 127.0.0.1 -p 9000
+
+# Load API keys from a .env file
+atlas serve -H 0.0.0.0 -p 8000 --env-file .env
+```
+
+**API endpoints:**
+
+| Method | Path                      | Description                                |
+| ------ | ------------------------- | ------------------------------------------ |
+| GET    | `/health`                 | Health check                               |
+| POST   | `/extract`                | Extract multimodal insights from a video   |
+| POST   | `/index`                  | Index a video for semantic search          |
+| POST   | `/transcribe`             | Transcribe a video                         |
+| POST   | `/search`                 | Semantic search across indexed videos      |
+| POST   | `/chat`                   | Chat with a video (SSE streaming response) |
+| GET    | `/list-videos`            | List all indexed videos                    |
+| GET    | `/list-chat/{video_id}`   | Get chat history for a video               |
+| GET    | `/stats`                  | Vector store statistics                    |
+| GET    | `/get-video/{video_id}`   | Retrieve all indexed data for a video      |
+| GET    | `/queue/list`             | List queued tasks (filter by `?status=`)   |
+| GET    | `/queue/status/{task_id}` | Get status and result of a specific task   |
+
+> `/chat` returns a [Server-Sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events) stream. Each event carries `data: {"chunk": "..."}` and the stream ends with `data: [DONE]`.
+
+**Quick test:**
+
+```bash
+# Health
+curl http://localhost:8000/health
+
+# Search
+curl -s -X POST http://localhost:8000/search \
+  -H "Content-Type: application/json" \
+  -d '{"query": "machine learning demo", "top_k": 5}'
+
+# Streaming chat
+curl -sN -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"video_id": "<video_id>", "query": "What is this video about?"}'
+```
+
+---
+
 ## API Keys Reference
 
 | Command       | `GEMINI_API_KEY` | `GROQ_API_KEY` |

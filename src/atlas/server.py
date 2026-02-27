@@ -64,7 +64,8 @@ class TranscribeRequest(BaseModel):
 
 
 class SearchRequest(BaseModel):
-    search_args: list[str]
+    query: str
+    video_id: str | None = None
     top_k: int = 10
 
 
@@ -144,12 +145,8 @@ def create_app() -> FastAPI:
     async def search(payload: SearchRequest) -> dict[str, Any]:
         from .vector_store.video_index import search_video
 
-        pos = payload.search_args
-        if len(pos) >= 2:
-            video_id, query = pos[0], " ".join(pos[1:])
-        else:
-            video_id, query = None, pos[0]
-
+        video_id = payload.video_id
+        query = payload.query
         results = await search_video(query, payload.top_k, video_id)
         return {
             "count": len(results),

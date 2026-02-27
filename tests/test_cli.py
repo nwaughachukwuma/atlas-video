@@ -155,11 +155,16 @@ class TestParserConstruction:
         ns = parser.parse_args(["serve"])
         assert ns.host == "0.0.0.0"
         assert ns.port == 8000
+        assert ns.env_file is None
 
     def test_serve_custom_host_port(self, parser):
         ns = parser.parse_args(["serve", "-H", "127.0.0.1", "-p", "9000"])
         assert ns.host == "127.0.0.1"
         assert ns.port == 9000
+
+    def test_serve_env_file(self, parser):
+        ns = parser.parse_args(["serve", "--env-file", ".env"])
+        assert ns.env_file == ".env"
 
     # ---- search ----
 

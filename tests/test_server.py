@@ -30,7 +30,7 @@ class TestSearchEndpoint:
 
         with patch("atlas.vector_store.video_index.search_video", new=AsyncMock(return_value=[fake_result])):
             client = TestClient(create_app())
-            resp = client.post("/search", json={"search_args": ["vid1", "hello world"], "top_k": 3})
+            resp = client.post("/search", json={"video_id": "vid1", "query": "hello world", "top_k": 3})
 
         assert resp.status_code == 200
         body = resp.json()
@@ -40,7 +40,7 @@ class TestSearchEndpoint:
     def test_search_all_videos(self):
         with patch("atlas.vector_store.video_index.search_video", new=AsyncMock(return_value=[])):
             client = TestClient(create_app())
-            resp = client.post("/search", json={"search_args": ["hello"], "top_k": 5})
+            resp = client.post("/search", json={"query": "hello", "top_k": 5})
 
         assert resp.status_code == 200
         assert resp.json()["count"] == 0
