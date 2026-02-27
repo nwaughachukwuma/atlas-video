@@ -29,6 +29,7 @@ from atlas.cli import (
     cmd_list_chat,
     cmd_list_videos,
     cmd_search,
+    cmd_serve,
     cmd_stats,
     cmd_transcribe,
     format_elapsed,
@@ -82,6 +83,7 @@ class TestParserConstruction:
             "stats",
             "queue",
             "get-video",
+            "serve",
         }
 
     # ---- extract ----
@@ -146,6 +148,18 @@ class TestParserConstruction:
         ns = parser.parse_args(["get-video", "vid1", "-o", "out.json"])
         assert ns.video_id == "vid1"
         assert ns.output == "out.json"
+
+    # ---- serve ----
+
+    def test_serve_defaults(self, parser):
+        ns = parser.parse_args(["serve"])
+        assert ns.host == "0.0.0.0"
+        assert ns.port == 8000
+
+    def test_serve_custom_host_port(self, parser):
+        ns = parser.parse_args(["serve", "-H", "127.0.0.1", "-p", "9000"])
+        assert ns.host == "127.0.0.1"
+        assert ns.port == 9000
 
     # ---- search ----
 
@@ -233,6 +247,7 @@ class TestParserConstruction:
             "list-chat": (cmd_list_chat, ["list-chat", "vid1"]),
             "stats": (cmd_stats, ["stats"]),
             "get-video": (cmd_get_data, ["get-video", "vid1"]),
+            "serve": (cmd_serve, ["serve"]),
         }
         for cmd_name, (expected_fn, argv) in mapping.items():
             ns = parser.parse_args(argv)

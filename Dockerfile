@@ -75,9 +75,12 @@ RUN mkdir -p \
 #   docker run -v atlas-data:/home/atlas/.atlas ...
 VOLUME ["/home/atlas/.atlas"]
 
+# Atlas HTTP server default port (used by `atlas serve`).
+EXPOSE 8000
+
 # ── Entrypoint ───────────────────────────────────────────────────────────────
 COPY --chown=atlas:atlas docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["--help"]
+CMD ["serve", "-H", "0.0.0.0", "-p", "8000"]

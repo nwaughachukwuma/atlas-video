@@ -108,6 +108,31 @@ docker run --rm nwaughachukwuma/atlas-video --version
 docker run --rm nwaughachukwuma/atlas-video queue list
 ```
 
+### Run as HTTP server (Docker)
+
+```bash
+# Start Atlas API server on port 8000
+docker run --rm -d \
+  -p 8000:8000 \
+  --env-file .env \
+  -v atlas-data:/home/atlas/.atlas \
+  nwaughachukwuma/atlas-video serve -H 0.0.0.0 -p 8000
+
+# Health check
+curl http://localhost:8000/health
+```
+
+Or specify the API keys inline:
+
+```bash
+docker run --rm -d \
+  -p 8000:8000 \
+  -e GEMINI_API_KEY="$GEMINI_API_KEY" \
+  -e GROQ_API_KEY="$GROQ_API_KEY" \
+  -v atlas-data:/home/atlas/.atlas \
+  nwaughachukwuma/atlas-video serve -H 0.0.0.0 -p 8000
+```
+
 ### Environment variables
 
 | Variable         | Required for                         | Description                                                |

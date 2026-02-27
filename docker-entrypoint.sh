@@ -54,7 +54,7 @@ case "${SUBCOMMAND}" in
     require_env GROQ_API_KEY \
       "Obtain a free key at https://console.groq.com/keys"
     ;;
-  list-videos|list-chat|stats|queue|"")
+  list-videos|list-chat|stats|queue|serve|"")
     # No API keys needed
     ;;
   *)
