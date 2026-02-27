@@ -24,8 +24,11 @@ def cmd_search(args: argparse.Namespace) -> None:
     pos = args.search_args
     if len(pos) >= 2:
         video_id, query = pos[0], " ".join(pos[1:])
-    else:
+    elif len(pos) == 1:
         video_id, query = None, pos[0]
+    else:
+        console.print("[red]Error: At least a search query is required.[/red]")
+        sys.exit(1)
 
     try:
         results = asyncio.run(search_video(query, args.top_k, video_id))

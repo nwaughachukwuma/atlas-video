@@ -46,7 +46,7 @@ class IndexRequest(BaseModel):
     video_path: str
     chunk_duration: str = "15s"
     overlap: str = "0s"
-    embedding_dim: int = 768
+    # embedding_dim: int = 768
     attrs: list[str] | None = None
     include_summary: bool = True
     benchmark: bool = False
@@ -94,7 +94,7 @@ def _run_command(func, args: argparse.Namespace) -> Any:
         except SystemExit as exc:
             code = exc.code if isinstance(exc.code, int) else 1
             raise HTTPException(
-                status_code=400,
+                400,
                 detail={
                     "ok": False,
                     "exit_code": code,

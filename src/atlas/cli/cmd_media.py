@@ -206,7 +206,7 @@ def cmd_transcribe(args: argparse.Namespace) -> None:
             console.print("[yellow]No transcript content generated.[/yellow]")
             return
 
-        result = {"transcript": full_text, "format": fmt, "video_path": str(video_path)}
+        result = {"transcript": full_text, "format": fmt}
         output_str = json.dumps(result, indent=2)
         if output_path:
             Path(output_path).write_text(output_str)

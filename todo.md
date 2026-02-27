@@ -2,7 +2,7 @@
 
 - [x] Implement a simple server with necessary endpoint to be run in the docker container pulled using docker pull nwaughachukwuma/atlas-video, so anyone can start the server as shown in the kreuzberg example below. Let's use FastAPI or a simple python server for this.
 - [x] Let's expose all the CLI options as endpoints on the server in the docker container.
-- [] Allow support for provider and model configuration - QWEN and GEMINI
+- [ ] Allow support for provider and model configuration - QWEN and GEMINI
 
 ---
 

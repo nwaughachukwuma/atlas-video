@@ -254,8 +254,8 @@ class TestMediaPostEndpoints:
         """When --no-queue, cmd_extract prints JSON to stdout; server returns it parsed."""
         from atlas import server as server_module
 
-        def fake_extract(args):
-            print(json.dumps({"video_path": args.video_path, "segments_count": 5, "video_descriptions": []}))
+        def fake_extract(_args):
+            print(json.dumps({"segments_count": 5, "video_descriptions": []}))
 
         monkeypatch.setattr(server_module, "cmd_extract", fake_extract)
         client = TestClient(create_app())
@@ -263,14 +263,13 @@ class TestMediaPostEndpoints:
 
         assert resp.status_code == 200
         body = resp.json()
-        assert body["video_path"] == "/data/v.mp4"
         assert body["segments_count"] == 5
 
     def test_transcribe_no_queue_returns_json(self, monkeypatch):
         from atlas import server as server_module
 
         def fake_transcribe(args):
-            print(json.dumps({"transcript": "Hello world", "format": args.format, "video_path": args.video_path}))
+            print(json.dumps({"transcript": "Hello world", "format": args.format}))
 
         monkeypatch.setattr(server_module, "cmd_transcribe", fake_transcribe)
         client = TestClient(create_app())

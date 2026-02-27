@@ -62,7 +62,6 @@ def run_extract(args: argparse.Namespace) -> dict:
         raise ValueError(f"No `extract` result returned from processing {video_path}")
 
     return {
-        "video_path": video_path,
         "duration": result.duration,
         "video_descriptions": output_parts,
         "segments_count": len(all_descriptions),
@@ -127,7 +126,6 @@ def run_index(args: argparse.Namespace) -> dict:
 
     return {
         "video_id": video_id,
-        "video_path": video_path,
         "indexed_count": indexed_count,
         "duration": result.duration,
         "segments_count": len(result.video_descriptions),
