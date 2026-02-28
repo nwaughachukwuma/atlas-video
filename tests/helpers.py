@@ -15,7 +15,9 @@ def mock_asyncio_run(return_value=None, side_effect=None):
         if hasattr(coro, "close"):
             coro.close()
         if side_effect:
-            raise side_effect
+            if isinstance(side_effect, Exception):
+                raise side_effect
+            return side_effect
         return return_value
 
     return _run_mock

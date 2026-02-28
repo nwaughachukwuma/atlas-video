@@ -2,8 +2,10 @@
 Pytest configuration and shared fixtures for Atlas tests
 """
 
+import json
 import sys
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -116,3 +118,14 @@ def event_loop_policy():
     import asyncio
 
     return asyncio.DefaultEventLoopPolicy()
+
+
+@pytest.fixture(scope="function")
+def mock_model_dump_json():
+    def __(obj: Any):
+        def __inner(indent=2):
+            return json.dumps(obj, indent=indent)
+
+        return __inner
+
+    return __

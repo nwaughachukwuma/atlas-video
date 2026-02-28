@@ -770,11 +770,20 @@ class TestCmdExtract:
         ):
             cmd_extract(self._args(str(video)))
 
-    def test_success_json_to_stdout(self, tmp_path, monkeypatch, capsys):
+    def test_success_json_to_stdout(
+        self,
+        tmp_path,
+        monkeypatch,
+        capsys,
+        mock_model_dump_json,
+    ):
         monkeypatch.setenv("GEMINI_API_KEY", "k1")
         video = tmp_path / "v.mp4"
         video.touch()
         mock_result = MagicMock(duration=10.0, video_descriptions=[])
+        mock_result.model_dump_json = MagicMock(
+            side_effect=mock_model_dump_json({"duration": 10.0, "video_descriptions": []})
+        )
         with (
             patch("atlas.cli.cmd_media.validate_api_keys"),
             patch("atlas.cli.cmd_media.asyncio.run", side_effect=mock_asyncio_run(return_value=mock_result)),
@@ -785,12 +794,17 @@ class TestCmdExtract:
         data = json.loads(captured.out)
         assert data["duration"] == 10.0
 
-    def test_success_json_to_file(self, tmp_path, monkeypatch):
+    def test_success_json_to_file(self, tmp_path, monkeypatch, mock_model_dump_json):
         monkeypatch.setenv("GEMINI_API_KEY", "k1")
         video = tmp_path / "v.mp4"
         video.touch()
         out = tmp_path / "out.json"
+
         mock_result = MagicMock(duration=10.0, video_descriptions=[])
+        mock_result.model_dump_json = MagicMock(
+            side_effect=mock_model_dump_json({"duration": 10.0, "video_descriptions": []})
+        )
+
         with (
             patch("atlas.cli.cmd_media.validate_api_keys"),
             patch("atlas.cli.cmd_media.asyncio.run", side_effect=mock_asyncio_run(return_value=mock_result)),

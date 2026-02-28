@@ -37,7 +37,7 @@ def short_name(full: str) -> str:
     return v[1] if len(v) > 1 else v[0]
 
 
-def err(msg: str) -> None:
+def err(msg: str):
     """Print a red error message and exit with code 2 (client/validation error)."""
     from . import get_console
 

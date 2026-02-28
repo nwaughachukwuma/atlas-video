@@ -107,7 +107,9 @@ def cmd_extract(args: argparse.Namespace) -> None:
                 return await processor.process(_on_segment)
 
         result = asyncio.run(_run())
-        assert result is not None, "VideoProcessor.process() returned None"
+        if not result:
+            err("No insights extracted from the video.")
+            return
 
         output_str = result.model_dump_json(indent=2)
         if output_path:
