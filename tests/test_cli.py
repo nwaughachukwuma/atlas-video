@@ -128,7 +128,7 @@ class TestParserConstruction:
         ns = parser.parse_args(["index", "video.mp4"])
         assert ns.video_path == "video.mp4"
         assert ns.chunk_duration == "15s"
-        assert ns.overlap == "0s"
+        assert ns.overlap == "1s"
         # assert ns.embedding_dim == 768
 
     def test_index_custom_flags(self, parser):
