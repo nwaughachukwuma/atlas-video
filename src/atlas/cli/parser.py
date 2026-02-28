@@ -12,7 +12,7 @@ from .cmd_explore import cmd_chat, cmd_get_data, cmd_list_chat, cmd_list_videos,
 from .cmd_media import cmd_extract, cmd_index, cmd_transcribe
 from .cmd_server import cmd_serve
 
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 PROG_NAME = "atlas"
 
 

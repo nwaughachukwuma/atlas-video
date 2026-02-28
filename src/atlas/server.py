@@ -123,7 +123,7 @@ def _run_command(func, args: argparse.Namespace, *, tmp_dir: Path | None = None)
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="Atlas Server", version="0.2.0")
+    app = FastAPI(title="Atlas Server", version="0.2.1")
 
     @app.middleware("http")
     async def add_execution_time_header(request, call_next):
