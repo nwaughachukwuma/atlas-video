@@ -375,7 +375,7 @@ class TestCmdIndex:
             no_streaming=False,
         )
 
-    def test_success_prints_video_id(self, tmp_path, monkeypatch, progress_ctx):
+    def test_success_prints_video_id(self, tmp_path, monkeypatch, progress_ctx, mock_model_dump):
         monkeypatch.setenv("GEMINI_API_KEY", "k1")
         monkeypatch.setenv("GROQ_API_KEY", "k2")
 
@@ -383,8 +383,7 @@ class TestCmdIndex:
         video.touch()
         args = self._args(video_path=str(video))
 
-        mock_result = MagicMock(duration=30.0, video_descriptions=[MagicMock()] * 3)
-        mock_result.model_dump.return_value = {"duration": 30.0, "video_descriptions": []}
+        mock_result = mock_model_dump(duration=30.0, video_descriptions=[])
 
         with (
             patch("atlas.cli.cmd_media.validate_api_keys"),
@@ -394,7 +393,7 @@ class TestCmdIndex:
                 side_effect=mock_asyncio_run(return_value=("vid_001", 3, mock_result)),
             ),
         ):
-            cmd_index(args)  # must not raise
+            cmd_index(args)
 
     def test_missing_api_key_exits(self, tmp_path, monkeypatch):
         monkeypatch.delenv("GEMINI_API_KEY", raising=False)
@@ -781,10 +780,9 @@ class TestCmdExtract:
         monkeypatch.setenv("GEMINI_API_KEY", "k1")
         video = tmp_path / "v.mp4"
         video.touch()
-        mock_result = MagicMock(duration=10.0, video_descriptions=[])
-        mock_result.model_dump_json = MagicMock(
-            side_effect=mock_model_dump_json({"duration": 10.0, "video_descriptions": []})
-        )
+
+        mock_result = mock_model_dump_json({"duration": 10.0, "video_descriptions": []})
+
         with (
             patch("atlas.cli.cmd_media.validate_api_keys"),
             patch("atlas.cli.cmd_media.asyncio.run", side_effect=mock_asyncio_run(return_value=mock_result)),
@@ -801,10 +799,7 @@ class TestCmdExtract:
         video.touch()
         out = tmp_path / "out.json"
 
-        mock_result = MagicMock(duration=10.0, video_descriptions=[])
-        mock_result.model_dump_json = MagicMock(
-            side_effect=mock_model_dump_json({"duration": 10.0, "video_descriptions": []})
-        )
+        mock_result = mock_model_dump_json({"duration": 10.0, "video_descriptions": []})
 
         with (
             patch("atlas.cli.cmd_media.validate_api_keys"),

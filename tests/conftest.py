@@ -5,7 +5,6 @@ Pytest configuration and shared fixtures for Atlas tests
 import json
 import sys
 from pathlib import Path
-from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -131,12 +130,26 @@ def event_loop_policy():
     return asyncio.DefaultEventLoopPolicy()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="package")
 def mock_model_dump_json():
-    def __(obj: Any):
-        def __inner(indent=2):
-            return json.dumps(obj, indent=indent)
+    """Fixture to create a MagicMock with model_dump_json side effect."""
 
-        return __inner
+    def _factory(obj: dict):
+        mock = MagicMock()
+        # Attach model_dump_json as a method that returns the JSON string
+        mock.model_dump_json = MagicMock(side_effect=lambda **kwargs: json.dumps(obj, **kwargs))
+        return mock
 
-    return __
+    return _factory
+
+
+@pytest.fixture(scope="package")
+def mock_model_dump():
+    """Generic fixture to mock Pydantic's model_dump for any MagicMock."""
+
+    def _factory(**model_dump_return_value):
+        mock = MagicMock()
+        mock.model_dump = MagicMock(return_value=model_dump_return_value)
+        return mock
+
+    return _factory
