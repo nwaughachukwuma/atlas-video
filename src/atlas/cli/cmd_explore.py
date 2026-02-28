@@ -1,4 +1,6 @@
-"""Command handlers for search, chat, list-videos, list-chat, and stats."""
+"""
+Command handlers for search, chat, list-videos, list-chat, and stats
+"""
 
 from __future__ import annotations
 

@@ -130,17 +130,10 @@ def cmd_queue_status(args: argparse.Namespace) -> None:
     output = dict(task)
     output["duration"] = _duration_str(task.get("started_at"), task.get("finished_at")) or None
 
-    if output_file.exists():
-        try:
-            output["result"] = json.loads(output_file.read_text())
-        except Exception:
-            output["result"] = output_file.read_text()
-
-    if benchmark_file.exists():
-        rows = _parse_benchmark_file(benchmark_file)
-        output["benchmark"] = [
-            {"function": r[0], "calls": r[1], "total_s": r[2], "avg_s": r[3], "min_s": r[4], "max_s": r[5]}
-            for r in rows
-        ]
+    output["output_path"] = str(output_file)
+    # Expose benchmark path instead of inlining the table.
+    has_benchmark = bool(output.pop("benchmark", False))
+    if has_benchmark:
+        output["benchmark_path"] = str(benchmark_file)
 
     print(json.dumps(output, indent=2, default=str))

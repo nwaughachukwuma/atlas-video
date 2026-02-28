@@ -1,4 +1,6 @@
-"""Cross-platform system notifications. Never raises."""
+"""
+Cross-platform system notifications. Never raises
+"""
 
 from __future__ import annotations
 

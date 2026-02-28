@@ -1,4 +1,6 @@
-"""Shared file and serialisation helpers for the task queue."""
+"""
+Shared file and serialisation helpers for the task queue
+"""
 
 from __future__ import annotations
 
@@ -37,4 +39,3 @@ def serialize_result(result: Any) -> str:
 def results_dir_for(task_id: str) -> Path:
     """Return the results directory for a given task ID."""
     return RESULTS_DIR / task_id
-

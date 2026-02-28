@@ -1,4 +1,6 @@
-"""Subprocess-backed task queue — each task runs in its own Python process."""
+"""
+Subprocess-backed task queue — each task runs in its own Python process
+"""
 
 from __future__ import annotations
 

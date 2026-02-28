@@ -1,4 +1,6 @@
-"""Task queue configuration — constants, paths, and status enum."""
+"""
+Task queue configuration — constants, paths, and status enum
+"""
 
 from __future__ import annotations
 
@@ -32,8 +34,8 @@ RESULTS_DIR = QUEUE_DIR / "queued_tasks" / "results"
 
 # ── Retention limits ──────────────────────────────────────────────────────────
 
-MAX_FAILED_TASKS = 50
-MAX_COMPLETED_TASKS = 50
+MAX_FAILED_TASKS = 150
+MAX_COMPLETED_TASKS = 100
 
 
 # ── Task status ───────────────────────────────────────────────────────────────

@@ -55,6 +55,17 @@ class VideoProcessorResult(BaseModel):
     video_descriptions: list[VideoDescription]
 
 
+def compile_transcript(descr: list[VideoDescription]) -> str:
+    """Compile transcript from video descriptions, ensuring chronological order"""
+    sorted_descr = sorted(descr, key=lambda d: d.start)
+    transcript = ""
+    for desc in sorted_descr:
+        for analysis in desc.video_analysis:
+            if analysis.attr == "transcript" and analysis.value.strip():
+                transcript += analysis.value.strip() + "\n"
+    return transcript.strip()
+
+
 class VideoProcessor(MediaFileManager, GeminiMediaEngine):
     """Process videos for multimodal analysis"""
 
@@ -122,7 +133,7 @@ class VideoProcessor(MediaFileManager, GeminiMediaEngine):
         return VideoProcessorResult(
             video_path=self.video_path,
             duration=self.duration,
-            transcript="",
+            transcript=compile_transcript(sorted_results),
             video_descriptions=sorted_results,
         )
 

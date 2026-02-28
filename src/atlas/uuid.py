@@ -7,7 +7,7 @@ def uuid(size=17) -> str:
     """
     Generate a random uuid string of the given size.
     """
-    alphabet_set = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+    alphabet_set = "_0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
     return generate(alphabet_set, size)
 
 

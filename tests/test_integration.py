@@ -14,6 +14,7 @@ from atlas.video_processor import (
     VideoProcessor,
     VideoProcessorConfig,
     VideoProcessorResult,
+    compile_transcript,
 )
 
 
@@ -36,7 +37,7 @@ class TestVideoIndexIntegration:
         return VideoProcessorResult(
             video_path="/tmp/test_video.mp4",
             duration=10.0,
-            transcript="",
+            transcript=compile_transcript([desc]),
             video_descriptions=[desc],
         )
 

@@ -1,4 +1,6 @@
-"""SQLite-backed task store with WAL mode for concurrent reads."""
+"""
+SQLite-backed task store with WAL mode for concurrent reads
+"""
 
 from __future__ import annotations
 

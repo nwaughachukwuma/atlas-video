@@ -1,4 +1,6 @@
-"""CLI handler for running the Atlas HTTP server."""
+"""
+CLI handler for running the Atlas HTTP server
+"""
 
 from __future__ import annotations
 

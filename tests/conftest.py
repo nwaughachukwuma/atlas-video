@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from src.atlas.utils import VideoAttrAnalysis
-from src.atlas.video_processor import VideoDescription, VideoProcessorResult
+from src.atlas.video_processor import VideoDescription, VideoProcessorResult, compile_transcript
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -82,7 +82,7 @@ def sample_video_processor_result(sample_video_description):
     return VideoProcessorResult(
         video_path="/tmp/test_video.mp4",
         duration=10.0,
-        transcript="Test transcript content",
+        transcript=compile_transcript([sample_video_description]),
         video_descriptions=[sample_video_description],
     )
 

@@ -1,4 +1,6 @@
-"""Command handlers for extract, transcribe, and index (the "heavy" video commands)."""
+"""
+Command handlers for extract, transcribe, and index (the "heavy" video commands)
+"""
 
 from __future__ import annotations
 
