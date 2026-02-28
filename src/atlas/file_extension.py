@@ -15,7 +15,6 @@ def get_file_extension(file_path: str):
     mime_type, _ = mimetypes.guess_type(file_path)
     if not mime_type:
         raise ValueError(f"Unsupported MIME type: {mime_type}")
-
     return get_ext_from_mimetype(mime_type)
 
 

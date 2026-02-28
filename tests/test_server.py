@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import io
 import json
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -11,6 +12,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi.testclient import TestClient
 
 from atlas.server import create_app
+
+
+def _fake_video(name: str = "test.mp4", content: bytes = b"fake-video-data"):
+    """Return a (filename, file-like, content-type) tuple for TestClient uploads."""
+    return (name, io.BytesIO(content), "video/mp4")
 
 
 class TestHealthEndpoints:
@@ -283,7 +289,7 @@ class TestQueueStatusEndpoint:
 
 
 class TestMediaPostEndpoints:
-    """extract/index/transcribe use _run_command; JSON stdout is auto-parsed."""
+    """extract/index/transcribe accept file uploads; JSON stdout is auto-parsed."""
 
     def test_extract_no_queue_returns_json(self, monkeypatch):
         """When --no-queue, cmd_extract prints JSON to stdout; server returns it parsed."""
@@ -294,7 +300,11 @@ class TestMediaPostEndpoints:
 
         monkeypatch.setattr(server_module, "cmd_extract", fake_extract)
         client = TestClient(create_app())
-        resp = client.post("/extract", json={"video_path": "/data/v.mp4", "no_queue": True})
+        resp = client.post(
+            "/extract",
+            files={"video": _fake_video()},
+            data={"no_queue": "true"},
+        )
 
         assert resp.status_code == 200
         body = resp.json()
@@ -308,7 +318,11 @@ class TestMediaPostEndpoints:
 
         monkeypatch.setattr(server_module, "cmd_transcribe", fake_transcribe)
         client = TestClient(create_app())
-        resp = client.post("/transcribe", json={"video_path": "/data/v.mp4", "no_queue": True, "format": "text"})
+        resp = client.post(
+            "/transcribe",
+            files={"video": _fake_video()},
+            data={"no_queue": "true", "format": "text"},
+        )
 
         assert resp.status_code == 200
         body = resp.json()
@@ -323,7 +337,11 @@ class TestMediaPostEndpoints:
 
         monkeypatch.setattr(server_module, "cmd_index", fake_index)
         client = TestClient(create_app())
-        resp = client.post("/index", json={"video_path": "/data/v.mp4", "no_queue": True})
+        resp = client.post(
+            "/index",
+            files={"video": _fake_video()},
+            data={"no_queue": "true"},
+        )
 
         assert resp.status_code == 200
         body = resp.json()
@@ -339,7 +357,10 @@ class TestMediaPostEndpoints:
 
         monkeypatch.setattr(server_module, "cmd_extract", fake_extract)
         client = TestClient(create_app())
-        resp = client.post("/extract", json={"video_path": "/data/v.mp4"})
+        resp = client.post(
+            "/extract",
+            files={"video": _fake_video()},
+        )
 
         assert resp.status_code == 200
         body = resp.json()
@@ -358,8 +379,35 @@ class TestMediaPostEndpoints:
 
         monkeypatch.setattr(server_module, "cmd_extract", fake_extract)
         client = TestClient(create_app())
-        client.post("/extract", json={"video_path": "/data/v.mp4"})
+        client.post(
+            "/extract",
+            files={"video": _fake_video()},
+        )
 
         assert captured["chunk_duration"] == "15s"
         assert captured["overlap"] == "1s"
         assert captured["no_queue"] is False
+
+    def test_upload_temp_file_cleaned_up(self, monkeypatch):
+        """Verify the temp directory created for the upload is removed after the request."""
+        from atlas import server as server_module
+
+        saved_path: list[str] = []
+
+        def fake_transcribe(args):
+            saved_path.append(args.video_path)
+            print(json.dumps({"ok": True}))
+
+        monkeypatch.setattr(server_module, "cmd_transcribe", fake_transcribe)
+        client = TestClient(create_app())
+        resp = client.post(
+            "/transcribe",
+            files={"video": _fake_video()},
+            data={"no_queue": "true"},
+        )
+
+        assert resp.status_code == 200
+        # The temp directory should have been cleaned up
+        from pathlib import Path
+
+        assert not Path(saved_path[0]).parent.exists()

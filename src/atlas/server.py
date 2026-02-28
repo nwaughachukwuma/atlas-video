@@ -6,61 +6,34 @@ Design rules
   reads from ``argparse.Namespace``.  No phantom flags.
 * Read-only / side-effect-free endpoints use **GET** (with path / query params).
 * Mutating / long-running endpoints use **POST** (with a JSON body).
+* Endpoints that accept a video file use **multipart/form-data** so that
+  clients can upload files from any device — no shared filesystem needed.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import shutil
+import tempfile
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
+from pathlib import Path
 from typing import Any, Literal
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from .cli.cmd_media import cmd_extract, cmd_index, cmd_transcribe
+from .file_extension import get_ext_from_mimetype
+from .uuid import uuid
 
 
 class CommandResult(BaseModel):
     ok: bool
     output: str
     error: str
-
-
-class ExtractRequest(BaseModel):
-    video_path: str
-    chunk_duration: str = "15s"
-    overlap: str = "1s"
-    attrs: list[str] | None = None
-    output: str | None = None
-    format: Literal["json", "text"] = "text"
-    include_summary: bool = True
-    benchmark: bool = False
-    no_queue: bool = False
-    no_streaming: bool = False
-
-
-class IndexRequest(BaseModel):
-    video_path: str
-    chunk_duration: str = "15s"
-    overlap: str = "0s"
-    # embedding_dim: int = 768
-    attrs: list[str] | None = None
-    include_summary: bool = True
-    benchmark: bool = False
-    no_queue: bool = False
-    no_streaming: bool = False
-
-
-class TranscribeRequest(BaseModel):
-    video_path: str
-    format: Literal["text", "vtt", "srt"] = "text"
-    output: str | None = None
-    benchmark: bool = False
-    no_queue: bool = False
-    no_streaming: bool = False
 
 
 class SearchRequest(BaseModel):
@@ -74,35 +47,68 @@ class ChatRequest(BaseModel):
     query: str
 
 
-def _run_command(func, args: argparse.Namespace) -> Any:
+def _save_upload(upload: UploadFile) -> Path:
+    """Persist an uploaded file to a temp directory and return its path.
+
+    The caller is responsible for cleaning up the parent directory
+    (``path.parent``) when processing is complete.
+    """
+    suffix = (
+        get_ext_from_mimetype(upload.content_type)
+        if upload.content_type
+        else Path(upload.filename).suffix
+        if upload.filename
+        else ".mp4"
+    )
+
+    tmp_dir = Path(tempfile.mkdtemp(prefix="atlas_upload_"))
+    dest = tmp_dir / f"upload_{uuid(10)}_{suffix}"
+    with dest.open("wb") as f:
+        shutil.copyfileobj(upload.file, f)
+    return dest
+
+
+def _run_command(func, args: argparse.Namespace, *, tmp_dir: Path | None = None) -> Any:
     """Run a CLI handler capturing stdout/stderr.
 
     Used only for mutating/queuing commands (extract, index, transcribe) whose
     output is either queued-task confirmation text or JSON (when --no-queue).
     When stdout is valid JSON it is parsed and returned directly so the client
     gets structured data rather than an escaped string.
+
+    If *tmp_dir* is supplied the directory is removed after the handler returns,
+    regardless of success or failure.
     """
+    from rich.console import Console
+
     from . import cli as cli_module
 
     stdout = StringIO()
     stderr = StringIO()
 
-    cli_module._console = None
-    with redirect_stdout(stdout), redirect_stderr(stderr):
-        try:
-            func(args)
-        except SystemExit as exc:
-            code = exc.code if isinstance(exc.code, int) else 1
-            http_status = 500 if code == 1 else 400
-            raise HTTPException(
-                http_status,
-                detail={
-                    "ok": False,
-                    "exit_code": code,
-                    "output": stdout.getvalue(),
-                    "error": stderr.getvalue(),
-                },
-            ) from exc
+    # Force the shared CLI console to write to our stderr buffer so that Rich
+    # progress bars / spinners don't pollute stdout (which we parse as JSON).
+    cli_module._console = Console(file=stderr)
+    try:
+        with redirect_stdout(stdout), redirect_stderr(stderr):
+            try:
+                func(args)
+            except SystemExit as exc:
+                code = exc.code if isinstance(exc.code, int) else 1
+                http_status = 500 if code == 1 else 400
+                raise HTTPException(
+                    http_status,
+                    detail={
+                        "ok": False,
+                        "exit_code": code,
+                        "output": stdout.getvalue(),
+                        "error": stderr.getvalue(),
+                    },
+                ) from exc
+    finally:
+        cli_module._console = None
+        if tmp_dir and tmp_dir.exists():
+            shutil.rmtree(tmp_dir, ignore_errors=True)
 
     raw = stdout.getvalue()
     try:
@@ -110,10 +116,6 @@ def _run_command(func, args: argparse.Namespace) -> Any:
     except (json.JSONDecodeError, ValueError):
         pass
     return CommandResult(ok=True, output=raw, error=stderr.getvalue())
-
-
-def _ns(model: BaseModel) -> argparse.Namespace:
-    return argparse.Namespace(**model.model_dump())
 
 
 # ── App factory ───────────────────────────────────────────────────────────────
@@ -126,19 +128,79 @@ def create_app() -> FastAPI:
     def health() -> dict[str, str]:
         return {"status": "ok"}
 
-    # ── mutating / long-running (POST) ────────────────────────────────
+    # ── mutating / long-running (POST with file upload) ─────────────
 
     @app.post("/extract")
-    def extract(payload: ExtractRequest) -> Any:
-        return _run_command(cmd_extract, _ns(payload))
+    def extract(
+        video: UploadFile = File(..., description="Video file to process"),
+        chunk_duration: str = Form("15s"),
+        overlap: str = Form("1s"),
+        attrs: str | None = Form(None, description="Comma-separated description attributes"),
+        output: str | None = Form(None),
+        format: Literal["json", "text"] = Form("text"),
+        include_summary: bool = Form(True),
+        benchmark: bool = Form(False),
+        no_queue: bool = Form(False),
+        no_streaming: bool = Form(False),
+    ):
+        saved = _save_upload(video)
+        args = argparse.Namespace(
+            video_path=str(saved),
+            chunk_duration=chunk_duration,
+            overlap=overlap,
+            attrs=attrs.split(",") if attrs else None,
+            output=output,
+            format=format,
+            include_summary=include_summary,
+            benchmark=benchmark,
+            no_queue=no_queue,
+            no_streaming=no_streaming,
+        )
+        return _run_command(cmd_extract, args, tmp_dir=saved.parent)
 
     @app.post("/index")
-    def index(payload: IndexRequest) -> Any:
-        return _run_command(cmd_index, _ns(payload))
+    def index(
+        video: UploadFile = File(..., description="Video file to process"),
+        chunk_duration: str = Form("15s"),
+        overlap: str = Form("0s"),
+        attrs: str | None = Form(None, description="Comma-separated description attributes"),
+        include_summary: bool = Form(True),
+        benchmark: bool = Form(False),
+        no_queue: bool = Form(False),
+        no_streaming: bool = Form(False),
+    ) -> Any:
+        saved = _save_upload(video)
+        args = argparse.Namespace(
+            video_path=str(saved),
+            chunk_duration=chunk_duration,
+            overlap=overlap,
+            attrs=attrs.split(",") if attrs else None,
+            include_summary=include_summary,
+            benchmark=benchmark,
+            no_queue=no_queue,
+            no_streaming=no_streaming,
+        )
+        return _run_command(cmd_index, args, tmp_dir=saved.parent)
 
     @app.post("/transcribe")
-    def transcribe(payload: TranscribeRequest) -> Any:
-        return _run_command(cmd_transcribe, _ns(payload))
+    def transcribe(
+        video: UploadFile = File(..., description="Video file to process"),
+        format: Literal["text", "vtt", "srt"] = Form("text"),
+        output: str | None = Form(None),
+        benchmark: bool = Form(False),
+        no_queue: bool = Form(False),
+        no_streaming: bool = Form(False),
+    ) -> Any:
+        saved = _save_upload(video)
+        args = argparse.Namespace(
+            video_path=str(saved),
+            format=format,
+            output=output,
+            benchmark=benchmark,
+            no_queue=no_queue,
+            no_streaming=no_streaming,
+        )
+        return _run_command(cmd_transcribe, args, tmp_dir=saved.parent)
 
     # ── search — calls data layer directly, returns structured JSON ────
 
