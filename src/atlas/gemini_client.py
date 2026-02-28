@@ -6,13 +6,22 @@ from __future__ import annotations
 
 import asyncio
 import os
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Literal, Optional
 
 from .utils import RetryConfig, logger, process_time, retry
 
 if TYPE_CHECKING:
     from google import genai
     from google.genai import types as genai_types
+
+
+Model = Literal[
+    "gemini-2.5-flash-lite",
+    "gemini-2.5-flash",
+    "gemini-2.5-pro",
+    "gemini-3-flash-preview",
+    "gemini-3.1-pro-preview",
+]
 
 
 class GeminiClient:
@@ -114,7 +123,7 @@ class GeminiMediaEngine:
         self,
         content: str,
         system_prompt: str,
-        model: str = "gemini-2.5-flash-lite",
+        model: Model = "gemini-2.5-flash-lite",
     ) -> str:
         """Generate text using Gemini"""
         from google.genai import types

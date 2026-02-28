@@ -93,8 +93,9 @@ def _run_command(func, args: argparse.Namespace) -> Any:
             func(args)
         except SystemExit as exc:
             code = exc.code if isinstance(exc.code, int) else 1
+            http_status = 500 if code == 1 else 400
             raise HTTPException(
-                400,
+                http_status,
                 detail={
                     "ok": False,
                     "exit_code": code,

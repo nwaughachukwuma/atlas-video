@@ -38,11 +38,11 @@ def short_name(full: str) -> str:
 
 
 def err(msg: str) -> None:
-    """Print a red error message and exit."""
+    """Print a red error message and exit with code 2 (client/validation error)."""
     from . import get_console
 
     get_console().print(f"[red]Error: {msg}[/red]")
-    sys.exit(1)
+    sys.exit(2)
 
 
 def format_elapsed(seconds: float) -> str:

@@ -88,12 +88,10 @@ def cmd_extract(args: argparse.Namespace) -> None:
     console.print(f"\n[bold blue]Processing video:[/bold blue] {video_path}")
     console.print(f"[dim]Chunk duration: {chunk_sec}s, Overlap: {overlap_sec}s[/dim]\n")
 
-    all_descriptions: List[VideoDescription] = []
-    output_parts: list[dict] = []
-
     def _on_segment(desc: VideoDescription) -> None:
-        all_descriptions.append(desc)
-        output_parts.append(desc.model_dump())
+        if not no_streaming:
+            segment_str = desc.model_dump_json(indent=2)
+            print("STREAMED SEGMENT: ", segment_str)
 
     try:
 
@@ -111,14 +109,7 @@ def cmd_extract(args: argparse.Namespace) -> None:
         result = asyncio.run(_run())
         assert result is not None, "VideoProcessor.process() returned None"
 
-        full_output = {
-            "video_path": str(video_path),
-            "duration": result.duration,
-            "video_descriptions": output_parts,
-            "segments_count": len(all_descriptions),
-        }
-
-        output_str = json.dumps(full_output, indent=2)
+        output_str = result.model_dump_json(indent=2)
         if output_path:
             Path(output_path).write_text(output_str)
             console.print(f"[green]Results saved to:[/green] {output_path}")
@@ -186,21 +177,22 @@ def cmd_transcribe(args: argparse.Namespace) -> None:
     console.print(f"\n[bold blue]Transcribing:[/bold blue] {video_path}")
     console.print(f"[dim]Output format: {fmt}[/dim]\n")
 
-    output_lines: list[str] = []
-
     def _on_chunk(text: str) -> None:
-        output_lines.append(text)
+        if not no_streaming:
+            print("STREAMED CHUNK:", text)
 
     async def _run():
-        return await get_video_transcript(str(video_path), format=fmt, on_chunk=_on_chunk)
+        return await get_video_transcript(
+            str(video_path),
+            format=fmt,
+            on_chunk=_on_chunk,
+        )
 
     try:
         with make_progress() as progress:
             task = progress.add_task("Transcribing...", total=None)
-            final_result = asyncio.run(_run())
+            full_text = asyncio.run(_run())
             progress.update(task, completed=True)
-
-        full_text = final_result or "".join(output_lines)
 
         if not full_text.strip():
             console.print("[yellow]No transcript content generated.[/yellow]")
@@ -211,8 +203,7 @@ def cmd_transcribe(args: argparse.Namespace) -> None:
             console.print(f"\n[green]Transcript saved to:[/green] {output_path}")
         else:
             result = {"transcript": full_text, "format": fmt}
-            output_str = json.dumps(result, indent=2)
-            print(output_str)
+            print(json.dumps(result, indent=2))
     except Exception as e:
         console.print(f"[red]Error transcribing: {e}[/red]")
         get_logger().exception("Error in transcribe command")
@@ -260,11 +251,17 @@ def cmd_index(args: argparse.Namespace) -> None:
 
     from ..utils import DEFAULT_DESCRIPTION_ATTRS
     from ..vector_store.video_index import index_video
+    from ..video_processor import VideoDescription
 
     console = Console(stderr=True)
 
     console.print(f"\n[bold blue]Indexing video:[/bold blue] {video_path}")
     console.print(f"[dim]Chunk duration: {chunk_sec}s, Overlap: {overlap_sec}s[/dim]")
+
+    def _on_segment(desc: VideoDescription) -> None:
+        if not no_streaming:
+            segment_str = desc.model_dump_json(indent=2)
+            print("STREAMED SEGMENT: ", segment_str)
 
     async def _run():
         with make_progress() as progress:
@@ -281,19 +278,15 @@ def cmd_index(args: argparse.Namespace) -> None:
                 overlap=overlap_sec,
                 description_attrs=description_attrs,
                 include_summary=args.include_summary,
+                on_segment=_on_segment,
             )
             progress.update(task, completed=True)
         return video_id, indexed_count, result
 
     try:
         video_id, indexed_count, result = asyncio.run(_run())
-        output = {
-            "video_id": video_id,
-            "indexed_count": indexed_count,
-            "duration": result.duration,
-            "segments_count": len(result.video_descriptions),
-        }
-        print(json.dumps(output, indent=2))
+        console.print(f"\n[green]Indexed {indexed_count} chunks for video ID:[/green] {video_id}\n")
+        print(result.model_dump_json(indent=2))
     except Exception as e:
         console.print(f"[red]Error indexing video: {e}[/red]")
         get_logger().exception("Error in index command")

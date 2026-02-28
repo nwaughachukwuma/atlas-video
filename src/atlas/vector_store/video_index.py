@@ -17,7 +17,7 @@ import asyncio
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -393,6 +393,7 @@ async def index_video(
     description_attrs: Optional[List[DescriptionAttr]] = None,
     include_summary=True,
     embedding_dim=768,
+    on_segment: Optional[Callable[[VideoDescription], None]] = None,
 ) -> tuple[str, int, "VideoProcessorResult"]:
     """Process a video file, index it, and register it.
 
@@ -419,7 +420,7 @@ async def index_video(
         include_summary=include_summary,
     )
     async with VideoProcessor(config) as processor:
-        result = await processor.process()
+        result = await processor.process(on_segment)
 
     vi = default_video_index(embedding_dim)
     vi.col_path.mkdir(parents=True, exist_ok=True)
