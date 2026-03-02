@@ -14,20 +14,20 @@ atlas serve --env-file .env -H 0.0.0.0 -p 8000
 
 ## Endpoints
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/health` | Health check |
-| `POST` | `/extract` | Extract multimodal insights |
-| `POST` | `/index` | Index a video for semantic search |
-| `POST` | `/transcribe` | Transcribe a video |
-| `POST` | `/search` | Semantic search across indexed videos |
-| `POST` | `/chat` | Chat with a video (SSE streaming) |
-| `GET` | `/list-videos` | List all indexed videos |
-| `GET` | `/list-chat/{video_id}` | Chat history for a video |
-| `GET` | `/stats` | Vector store statistics |
-| `GET` | `/get-video/{video_id}` | All indexed data for a video |
-| `GET` | `/queue/list` | List queued tasks (filter with `?status=`) |
-| `GET` | `/queue/status/{task_id}` | Status and result of a task |
+| Method | Path                      | Description                                |
+| ------ | ------------------------- | ------------------------------------------ |
+| `GET`  | `/health`                 | Health check                               |
+| `POST` | `/extract`                | Extract multimodal insights                |
+| `POST` | `/index`                  | Index a video for semantic search          |
+| `POST` | `/transcribe`             | Transcribe a video                         |
+| `POST` | `/search`                 | Semantic search across indexed videos      |
+| `POST` | `/chat`                   | Chat with a video (SSE streaming)          |
+| `GET`  | `/list-videos`            | List all indexed videos                    |
+| `GET`  | `/list-chat/{video_id}`   | Chat history for a video                   |
+| `GET`  | `/stats`                  | Vector store statistics                    |
+| `GET`  | `/get-video/{video_id}`   | All indexed data for a video               |
+| `GET`  | `/queue/list`             | List queued tasks (filter with `?status=`) |
+| `GET`  | `/queue/status/{task_id}` | Status and result of a task                |
 
 ---
 
@@ -102,7 +102,13 @@ Response:
 
 ```json
 [
-  { "score": 0.92, "video_id": "abc123def456", "content": "...", "start": 30.0, "end": 45.0 }
+  {
+    "score": 0.92,
+    "video_id": "abc123def456",
+    "content": "...",
+    "start": 30.0,
+    "end": 45.0
+  }
 ]
 ```
 
@@ -125,7 +131,10 @@ curl -sN -X POST http://localhost:8000/chat \
 const response = await fetch("http://localhost:8000/chat", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ video_id: "abc123def456", query: "Summarise the key points" }),
+  body: JSON.stringify({
+    video_id: "abc123def456",
+    query: "Summarise the key points",
+  }),
 });
 
 const reader = response.body!.getReader();

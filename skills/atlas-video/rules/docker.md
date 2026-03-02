@@ -37,11 +37,11 @@ Mount local video directories with `-v "$(pwd)/videos:/data"` and reference them
 
 ## Environment variables
 
-| Variable | Required for | Notes |
-|----------|-------------|-------|
+| Variable         | Required for                 | Notes                                               |
+| ---------------- | ---------------------------- | --------------------------------------------------- |
 | `GEMINI_API_KEY` | extract, index, search, chat | [AI Studio](https://aistudio.google.com/app/apikey) |
-| `GROQ_API_KEY` | transcribe, extract, index | [Groq Console](https://console.groq.com/keys) |
-| `ENABLE_LOGGING` | optional | set `true` for verbose logs |
+| `GROQ_API_KEY`   | transcribe, extract, index   | [Groq Console](https://console.groq.com/keys)       |
+| `ENABLE_LOGGING` | optional                     | set `true` for verbose logs                         |
 
 ---
 

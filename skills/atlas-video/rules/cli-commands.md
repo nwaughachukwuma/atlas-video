@@ -25,13 +25,13 @@ Options:
 
 **Available `--attrs` values:**
 
-| Attribute | What it captures |
-|-----------|-----------------|
-| `visual_cues` | Visual elements, entities, their attributes |
-| `interactions` | Movements, gestures, dynamics between entities |
-| `contextual_information` | Production setting, atmosphere |
-| `audio_analysis` | Speech, music, sound effects, ambience |
-| `transcript` | Verbatim spoken content (via Gemini per chunk) |
+| Attribute                | What it captures                               |
+| ------------------------ | ---------------------------------------------- |
+| `visual_cues`            | Visual elements, entities, their attributes    |
+| `interactions`           | Movements, gestures, dynamics between entities |
+| `contextual_information` | Production setting, atmosphere                 |
+| `audio_analysis`         | Speech, music, sound effects, ambience         |
+| `transcript`             | Verbatim spoken content (via Gemini per chunk) |
 
 > For high-quality standalone transcripts, prefer `atlas transcribe` (Groq Whisper).
 
@@ -112,8 +112,9 @@ atlas search abc123def456 "the login screen demo" --top-k 5
 ## `atlas chat`
 
 Ask a question about a previously indexed video. Grounded with:
-1. Top-k semantic hits from `video_index`  
-2. Last 20 messages from `video_chat` history  
+
+1. Top-k semantic hits from `video_index`
+2. Last 20 messages from `video_chat` history
 3. Top-k semantic hits from prior chat turns (deduped)
 
 ```

@@ -129,8 +129,9 @@ asyncio.run(main())
 ```
 
 Context is assembled from:
-1. Top-k semantic hits from `video_index`  
-2. Last 20 messages from chat history  
+
+1. Top-k semantic hits from `video_index`
+2. Last 20 messages from chat history
 3. Top-k hits from prior chat turns (deduped)
 
 ---
@@ -164,13 +165,13 @@ Supported formats: `"text"`, `"vtt"`, `"srt"`.
 
 ## `VideoProcessorConfig` reference
 
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `video_path` | `str` | — | Path to the video file (required) |
-| `chunk_duration` | `int` | `15` | Seconds per chunk |
-| `overlap` | `int` | `1` | Seconds of overlap between chunks |
-| `description_attrs` | `list[str]` | all 5 | Attributes to extract |
-| `include_summary` | `bool` | `True` | Generate per-segment summary |
+| Field               | Type        | Default | Description                       |
+| ------------------- | ----------- | ------- | --------------------------------- |
+| `video_path`        | `str`       | —       | Path to the video file (required) |
+| `chunk_duration`    | `int`       | `15`    | Seconds per chunk                 |
+| `overlap`           | `int`       | `1`     | Seconds of overlap between chunks |
+| `description_attrs` | `list[str]` | all 5   | Attributes to extract             |
+| `include_summary`   | `bool`      | `True`  | Generate per-segment summary      |
 
 ## Full example — extract then index then chat
 
