@@ -16,7 +16,7 @@ import type {
   Video,
 } from "./types.ts";
 
-const BASE_URL = "";
+const BASE_URL = "http://localhost:8000";
 
 async function post<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(BASE_URL + path, {

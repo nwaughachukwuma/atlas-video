@@ -20,8 +20,8 @@
     { path: "/index", component: Index },
     { path: "/videos", component: Videos },
     { path: "/videos/:id", component: VideoDetail },
-    { path: "/queue", component: Queue },
     { path: "/queue/:id", component: Queue },
+    { path: "/queue", component: Queue },
     { path: "/dashboard", component: Dashboard },
   ];
 </script>

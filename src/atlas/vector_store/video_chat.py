@@ -14,6 +14,7 @@ VideoChat.get_history(video_id, last_n)           — read ordered history from 
 from __future__ import annotations
 
 import json
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
@@ -27,10 +28,8 @@ from ..utils import logger
 # Module-level convenience helper
 # ---------------------------------------------------------------------------
 
-DEFAULT_STORE_ROOT = Path.home() / ".atlas" / "index"
-
+DEFAULT_STORE_ROOT = Path(os.environ.get("ATLAS_HOME", Path.home() / ".atlas")) / "index"
 COLLECTION_NAME = "video_chat"
-
 ChatRole = Literal["user", "assistant"]
 
 

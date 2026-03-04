@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
@@ -33,7 +34,7 @@ if TYPE_CHECKING:
 # Module-level convenience functions
 # ---------------------------------------------------------------------------
 
-DEFAULT_STORE_ROOT = Path.home() / ".atlas" / "index"
+DEFAULT_STORE_ROOT = Path(os.environ.get("ATLAS_HOME", Path.home() / ".atlas")) / "index"
 COLLECTION_NAME = "video_index"
 DEFAULT_EMBEDDING_CONCURRENCY = 10
 

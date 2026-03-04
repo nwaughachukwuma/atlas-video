@@ -23,6 +23,7 @@ from time import perf_counter
 from typing import Any, Literal
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -132,6 +133,14 @@ def _run_command(func, args: argparse.Namespace, *, tmp_dir: Path | None = None)
 
 def create_app() -> FastAPI:
     app = FastAPI(title="Atlas Server", version="0.2.1")
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     @app.middleware("http")
     async def add_execution_time_header(request, call_next):
