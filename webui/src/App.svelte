@@ -14,15 +14,15 @@
 
   const basePath = getBasePath();
   const routes: RouteConfig[] = [
-    { path: "/", component: Home },
-    { path: "/transcribe", component: Transcribe },
-    { path: "/extract", component: Extract },
-    { path: "/index", component: Index },
-    { path: "/videos", component: Videos },
-    { path: "/videos/:id", component: VideoDetail },
-    { path: "/queue", component: Queue },
-    { path: "/queue/:id", component: Queue },
-    { path: "/dashboard", component: Dashboard },
+    { path: "#/", component: Home },
+    { path: "#/transcribe", component: Transcribe },
+    { path: "#/extract", component: Extract },
+    { path: "#/index", component: Index },
+    { path: "#/videos", component: Videos },
+    { path: "#/videos/:id", component: VideoDetail },
+    { path: "#/queue", component: Queue },
+    { path: "#/queue/:id", component: Queue },
+    { path: "#/dashboard", component: Dashboard },
   ];
 </script>
 

@@ -14,39 +14,39 @@
   type Props = { basePath?: string };
 
   const links: NavLink[] = [
-    { path: "/", icon: HouseIcon, label: "Home", title: "Atlas Video" },
+    { path: "#/", icon: HouseIcon, label: "Home", title: "Atlas Video" },
     {
-      path: "/transcribe",
+      path: "#/transcribe",
       icon: MicIcon,
       label: "Transcribe",
       title: "Transcribe",
     },
     {
-      path: "/extract",
+      path: "#/extract",
       icon: FlaskConicalIcon,
       label: "Extract",
       title: "Extract Insights",
     },
     {
-      path: "/index",
+      path: "#/index",
       icon: DatabaseIcon,
       label: "Index",
       title: "Index Video",
     },
     {
-      path: "/videos",
+      path: "#/videos",
       icon: FilmIcon,
       label: "Videos",
       title: "Indexed Videos",
     },
     {
-      path: "/queue",
+      path: "#/queue",
       icon: ClipboardListIcon,
       label: "Queue",
       title: "Task Queue",
     },
     {
-      path: "/dashboard",
+      path: "#/dashboard",
       icon: LayoutDashboardIcon,
       label: "Dashboard",
       title: "Dashboard",

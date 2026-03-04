@@ -18,7 +18,8 @@
   let healthData = $state<HealthResponse | null>(null);
   let queueData = $state<QueueListResponse | null>(null);
   let videosData = $state<ListVideosResponse | null>(null);
-  let loading = $state<boolean>(true);
+  
+    let loading = $state<boolean>(true);
   let error = $state<string | null>(null);
 
   onMount(async () => {
@@ -141,7 +142,7 @@
         <p class="text-muted text-[0.85rem]">No tasks in queue.</p>
       {:else}
         <div class="flex flex-col gap-2">
-          {#each queueStatusRows as [key, label]}
+          {#each queueStatusRows as [key, label] (key + label)}
             {@const count = queueBreakdown[key] ?? 0}
             {#if count > 0}
               <div class="flex items-center gap-3">
