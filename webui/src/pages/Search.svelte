@@ -1,6 +1,8 @@
 <script lang="ts">
+  import { route } from "@mateothegreat/svelte5-router";
   import { search } from "../lib/api.ts";
   import type { SearchResult } from "../lib/types.ts";
+  import { toPath } from "../lib/routing.ts";
 
   let query: string = "";
   let videoId: string = "";
@@ -32,6 +34,11 @@
     videoId = "";
     error = null;
   }
+
+  function handleSubmit(e: SubmitEvent): void {
+    e.preventDefault();
+    void doSearch();
+  }
 </script>
 
 <div class="page">
@@ -41,7 +48,7 @@
     to a specific video.
   </p>
 
-  <form class="search-form card" on:submit|preventDefault={doSearch}>
+  <form class="search-form card" onsubmit={handleSubmit}>
     <div class="form-row">
       <input
         class="query-input"
@@ -70,7 +77,7 @@
         Search
       </button>
       {#if results !== null || error}
-        <button type="button" class="btn-secondary" on:click={clear}
+        <button type="button" class="btn-secondary" onclick={clear}
           >Clear</button
         >
       {/if}
@@ -98,8 +105,10 @@
             <div class="result-card card">
               <div class="result-header">
                 <span class="result-num">#{i + 1}</span>
-                <a href={`#/videos/${r.video_id}`} class="vid-link"
-                  >{r.video_id}</a
+                <a
+                  href={toPath(`/videos/${r.video_id}`)}
+                  use:route
+                  class="vid-link">{r.video_id}</a
                 >
                 {#if r.score !== undefined}
                   <span class="score">score: {r.score.toFixed(4)}</span>

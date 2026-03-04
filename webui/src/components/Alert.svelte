@@ -1,3 +1,11 @@
+<script lang="ts" module>
+  type Props = {
+    type?: "error" | "success" | "info";
+    message?: string;
+    dismissible?: boolean;
+  };
+</script>
+
 <script lang="ts">
   import {
     CircleAlertIcon,
@@ -6,13 +14,11 @@
     XIcon,
   } from "lucide-svelte";
 
-  export let type: "error" | "success" | "info" = "error";
-  export let message: string = "";
-  export let dismissible: boolean = false;
-
-  let visible: boolean = true;
-
-  $: if (message) visible = true;
+  let { type = "error", message = "", dismissible = false }: Props = $props();
+  let visible: boolean = $state(true);
+  $effect(() => {
+    if (message) visible = true;
+  });
 </script>
 
 {#if visible && message}
@@ -35,7 +41,7 @@
     {#if dismissible}
       <button
         class="shrink-0 bg-transparent border-none p-0 text-inherit opacity-60 cursor-pointer flex mt-[0.1em] hover:opacity-100"
-        on:click={() => (visible = false)}
+        onclick={() => (visible = false)}
         aria-label="Dismiss"
       >
         <XIcon size={13} />

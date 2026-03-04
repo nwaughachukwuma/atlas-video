@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { route } from "@mateothegreat/svelte5-router";
   import {
     MicIcon,
     FlaskConicalIcon,
@@ -9,6 +10,7 @@
     ZapIcon,
   } from "lucide-svelte";
   import type { Feature } from "../lib/types.ts";
+  import { toPath } from "../lib/routing.ts";
 
   const features: Feature[] = [
     {
@@ -70,7 +72,8 @@
   >
     {#each features as f}
       <a
-        href={`#${f.path}`}
+        href={toPath(f.path)}
+        use:route
         class="card flex flex-col gap-[0.4rem] text-ink transition-[border-color,transform] duration-150 hover:border-cobalt hover:-translate-y-0.5"
       >
         <span class="text-cobalt flex items-center"

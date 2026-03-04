@@ -1,8 +1,10 @@
 <script lang="ts">
+  import { route } from "@mateothegreat/svelte5-router";
   import { DatabaseIcon, CircleCheckIcon } from "lucide-svelte";
   import VideoUpload from "../components/VideoUpload.svelte";
   import { indexVideo } from "../lib/api.ts";
   import type { IndexResult, TaskQueuedResult } from "../lib/types.ts";
+  import { toPath } from "../lib/routing.ts";
 
   let file: File | null = null;
   let chunk_duration: string = "15s";
@@ -65,7 +67,7 @@
   <div class="card mb-4">
     <VideoUpload
       bind:file
-      on:change={() => {
+      onChange={() => {
         result = null;
         error = null;
       }}
@@ -117,7 +119,7 @@
 
   <button
     class="btn-primary mb-3 text-base px-[1.6em] py-[0.6em]"
-    on:click={submit}
+    onclick={submit}
     disabled={!file || loading}
   >
     {#if loading}<span class="spinner"></span> Indexing…{:else}Index Video{/if}
@@ -133,7 +135,7 @@
         style="display:inline;vertical-align:middle;"
       /> Task queued! <strong>Task ID:</strong>
       {taskInfo.task_id ?? taskInfo.id ?? JSON.stringify(taskInfo)}
-      <br /><a href="#/queue">View Queue →</a>
+      <br /><a href={toPath("/queue")} use:route>View Queue →</a>
     </div>
   {/if}
 
@@ -155,7 +157,8 @@
       </p>
       <p><strong>Indexed chunks:</strong> {result.indexed_count}</p>
       <a
-        href={`#/videos/${result.video_id}`}
+        href={toPath(`/videos/${result.video_id}`)}
+        use:route
         class="btn-primary inline-block mt-2"
       >
         View Video →

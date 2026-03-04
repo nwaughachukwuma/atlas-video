@@ -1,18 +1,24 @@
 <script lang="ts">
+  import { route } from "@mateothegreat/svelte5-router";
   import { ClipboardListIcon } from "lucide-svelte";
   import { onMount, onDestroy } from "svelte";
   import { queueList, queueStatus } from "../lib/api.ts";
   import type { Task, TaskStatus } from "../lib/types.ts";
+  import { toPath } from "../lib/routing.ts";
 
-  export let params: Record<string, string> = {};
-  const taskId: string | null = params.id ?? null;
+  let { route: routeResult } = $props();
+  const taskId: string | null = $derived(
+    ((routeResult?.result?.path?.params?.id as string | undefined) ?? null) as
+      | string
+      | null,
+  );
 
-  let tasks: Task[] = [];
-  let task: Task | null = null;
-  let loading: boolean = true;
-  let error: string | null = null;
-  let statusFilter: TaskStatus | null = null;
-  let pollInterval: ReturnType<typeof setInterval> | null = null;
+  let tasks: Task[] = $state([]);
+  let task: Task | null = $state(null);
+  let loading: boolean = $state(true);
+  let error: string | null = $state(null);
+  let statusFilter: TaskStatus | null = $state(null);
+  let pollInterval: ReturnType<typeof setInterval> | null = $state(null);
 
   const statusOptions: (TaskStatus | null)[] = [
     null,
@@ -24,12 +30,16 @@
   ];
 
   async function load(): Promise<void> {
+    loading = true;
+    error = null;
     try {
       if (taskId) {
         task = await queueStatus(taskId);
+        tasks = [];
       } else {
         const data = await queueList(statusFilter);
         tasks = data.tasks ?? [];
+        task = null;
       }
     } catch (e) {
       error = (e as Error).message;
@@ -66,7 +76,9 @@
 <div class="p-8 max-w-[860px]">
   {#if taskId}
     <!-- Single task view -->
-    <div class="mb-4 text-[0.85rem]"><a href="#/queue">← All Tasks</a></div>
+    <div class="mb-4 text-[0.85rem]">
+      <a href={toPath("/queue")} use:route>← All Tasks</a>
+    </div>
     <h2>
       <ClipboardListIcon
         size={20}
@@ -155,7 +167,7 @@
       {#each statusOptions as s}
         <button
           class={statusFilter === s ? "btn-primary" : "btn-secondary"}
-          on:click={() => {
+          onclick={() => {
             statusFilter = s;
             load();
           }}
@@ -163,7 +175,7 @@
           {s ?? "All"}
         </button>
       {/each}
-      <button class="btn-secondary" on:click={load} title="Refresh"
+      <button class="btn-secondary" onclick={load} title="Refresh"
         >↻ Refresh</button
       >
     </div>
@@ -178,7 +190,8 @@
       <div class="flex flex-col gap-2">
         {#each tasks as t}
           <a
-            href={`#/queue/${t.id}`}
+            href={toPath(`/queue/${t.id}`)}
+            use:route
             class="card flex flex-col gap-[0.3rem] text-ink transition-[border-color] duration-150 hover:border-cobalt"
           >
             <div class="flex items-center gap-2">

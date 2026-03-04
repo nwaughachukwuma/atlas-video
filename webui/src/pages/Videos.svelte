@@ -1,8 +1,10 @@
 <script lang="ts">
+  import { route } from "@mateothegreat/svelte5-router";
   import { FilmIcon } from "lucide-svelte";
   import { onMount } from "svelte";
   import { listVideos, search } from "../lib/api.ts";
   import type { Video, SearchResult } from "../lib/types.ts";
+  import { toPath } from "../lib/routing.ts";
 
   let videos: Video[] = [];
   let loading: boolean = true;
@@ -68,17 +70,17 @@
       bind:value={searchQuery}
       placeholder="Search across all videos…"
       class="flex-1"
-      on:keydown={(e) => e.key === "Enter" && doSearch()}
+      onkeydown={(e) => e.key === "Enter" && doSearch()}
     />
     <button
       class="btn-primary"
-      on:click={doSearch}
+      onclick={doSearch}
       disabled={searching || !searchQuery.trim()}
     >
       {#if searching}<span class="spinner"></span>{:else}Search{/if}
     </button>
     {#if searchResults !== null}
-      <button class="btn-secondary" on:click={clearSearch}>Clear</button>
+      <button class="btn-secondary" onclick={clearSearch}>Clear</button>
     {/if}
   </div>
 
@@ -98,7 +100,8 @@
           <div class="card mb-3">
             <div class="flex justify-between mb-[0.4rem]">
               <a
-                href={`#/videos/${r.video_id}`}
+                href={toPath(`/videos/${r.video_id}`)}
+                use:route
                 class="font-mono text-[0.85rem] text-cobalt">{r.video_id}</a
               >
               <span class="text-[0.78rem] text-muted"
@@ -121,7 +124,8 @@
     <div class="card text-center py-10">
       <p class="mb-4">No videos indexed yet.</p>
       <a
-        href="#/index"
+        href={toPath("/index")}
+        use:route
         class="btn-primary inline-block px-6 py-2.5 text-[0.95rem]"
         >Index your first video →</a
       >
@@ -130,7 +134,8 @@
     <div class="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
       {#each videos as v}
         <a
-          href={`#/videos/${v.video_id}`}
+          href={toPath(`/videos/${v.video_id}`)}
+          use:route
           class="card flex gap-3 items-start text-ink transition-[border-color] duration-150 hover:border-cobalt"
         >
           <div class="text-cobalt flex items-center">

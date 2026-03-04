@@ -1,18 +1,23 @@
+<script lang="ts" module>
+  type Props = {
+    videoId: string;
+    onClose?: () => void;
+  };
+</script>
+
 <script lang="ts">
   import { MessageSquareIcon, XIcon } from "lucide-svelte";
-  import { createEventDispatcher, onDestroy } from "svelte";
+  import { onDestroy } from "svelte";
   import { chatStream, listChat } from "../lib/api.ts";
   import type { ChatMessage, RawChatMessage } from "../lib/types.ts";
 
-  export let videoId: string;
+  let { videoId, onClose = () => {} }: Props = $props();
 
-  const dispatch = createEventDispatcher<{ close: void }>();
-
-  let messages: ChatMessage[] = [];
-  let query: string = "";
-  let streaming: boolean = false;
-  let ctrl: AbortController | null = null;
-  let listEl: HTMLDivElement;
+  let messages: ChatMessage[] = $state([]);
+  let query: string = $state("");
+  let streaming: boolean = $state(false);
+  let ctrl: AbortController | null = $state(null);
+  let listEl: HTMLDivElement | null = $state(null);
 
   async function loadHistory(): Promise<void> {
     try {
@@ -33,12 +38,18 @@
     }
   }
 
-  loadHistory();
+  $effect(() => {
+    if (videoId) {
+      messages = [];
+      void loadHistory();
+    }
+  });
 
   function scrollBottom(): void {
-    if (listEl)
+    const currentList = listEl;
+    if (currentList)
       setTimeout(() => {
-        listEl.scrollTop = listEl.scrollHeight;
+        currentList.scrollTop = currentList.scrollHeight;
       }, 50);
   }
 
@@ -94,9 +105,7 @@
         style="display:inline;vertical-align:middle;"
       /> Chat with Video</span
     >
-    <button
-      class="btn-secondary px-[0.6em] py-[0.2em]"
-      on:click={() => dispatch("close")}
+    <button class="btn-secondary px-[0.6em] py-[0.2em]" onclick={onClose}
       ><XIcon size={14} strokeWidth={2} /></button
     >
   </div>
@@ -124,20 +133,20 @@
   <div class="flex gap-2 px-4 py-3 border-t border-line">
     <textarea
       bind:value={query}
-      on:keydown={handleKey}
+      onkeydown={handleKey}
       placeholder="Ask something… (Enter to send)"
       rows="2"
       disabled={streaming}
       class="flex-1 resize-none text-[0.85rem]"
     ></textarea>
     {#if streaming}
-      <button class="btn-danger self-end whitespace-nowrap" on:click={cancel}
+      <button class="btn-danger self-end whitespace-nowrap" onclick={cancel}
         >Stop</button
       >
     {:else}
       <button
         class="btn-primary self-end whitespace-nowrap"
-        on:click={send}
+        onclick={send}
         disabled={!query.trim()}>Send</button
       >
     {/if}

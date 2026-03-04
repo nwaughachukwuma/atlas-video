@@ -10,10 +10,11 @@
   import VideoDetail from "./pages/VideoDetail.svelte";
   import Queue from "./pages/Queue.svelte";
   import Dashboard from "./pages/Dashboard.svelte";
+  import { getBasePath } from "./lib/routing.ts";
 
-  // svelte-spa-router accepts a loose map of path → component
+  const basePath = getBasePath();
   const routes: RouteConfig[] = [
-    { component: Home },
+    { path: "/", component: Home },
     { path: "/transcribe", component: Transcribe },
     { path: "/extract", component: Extract },
     { path: "/index", component: Index },
@@ -25,9 +26,10 @@
   ];
 </script>
 
-<NavBar />
+<NavBar {basePath} />
+
 <main class="flex-1 overflow-y-auto min-h-screen">
-  <Router {routes} />
+  <Router {routes} {basePath} />
 </main>
 
 <div class="fixed top-4 right-5 z-100">

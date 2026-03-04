@@ -1,5 +1,4 @@
 /** Atlas API client – all calls go to the same origin. */
-
 import type {
   ExtractOptions,
   ExtractResult,

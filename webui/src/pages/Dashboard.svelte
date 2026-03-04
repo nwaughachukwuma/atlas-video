@@ -1,7 +1,9 @@
 <script lang="ts">
+  import { route } from "@mateothegreat/svelte5-router";
   import { onMount } from "svelte";
   import { stats, health, queueList, listVideos } from "../lib/api.ts";
   import { LayoutDashboardIcon } from "lucide-svelte";
+  import { toPath } from "../lib/routing.ts";
   import type {
     StatsResponse,
     HealthResponse,
@@ -12,12 +14,12 @@
 
   type QueueBreakdown = Record<TaskStatus, number>;
 
-  let statsData: StatsResponse | null = null;
-  let healthData: HealthResponse | null = null;
-  let queueData: QueueListResponse | null = null;
-  let videosData: ListVideosResponse | null = null;
-  let loading: boolean = true;
-  let error: string | null = null;
+  let statsData = $state<StatsResponse | null>(null);
+  let healthData = $state<HealthResponse | null>(null);
+  let queueData = $state<QueueListResponse | null>(null);
+  let videosData = $state<ListVideosResponse | null>(null);
+  let loading = $state<boolean>(true);
+  let error = $state<string | null>(null);
 
   onMount(async () => {
     try {
@@ -34,7 +36,7 @@
     }
   });
 
-  $: queueBreakdown = ((): QueueBreakdown => {
+  const queueBreakdown: QueueBreakdown = $derived.by((): QueueBreakdown => {
     const counts: QueueBreakdown = {
       pending: 0,
       running: 0,
@@ -47,10 +49,12 @@
       if (t.status in counts) counts[t.status]++;
     }
     return counts;
-  })();
+  });
 
-  $: videoCount = videosData?.count ?? statsData?.videos_indexed ?? 0;
-  $: totalTasks = queueData?.tasks?.length ?? 0;
+  const videoCount: number = $derived(
+    videosData?.count ?? statsData?.videos_indexed ?? 0,
+  );
+  const totalTasks: number = $derived(queueData?.tasks?.length ?? 0);
 
   function badgeClass(status: string): string {
     return `badge badge-${status}`;
@@ -178,12 +182,17 @@
           >
             Indexed Videos
           </h3>
-          <a href="#/videos" class="text-[0.8rem] font-semibold">View all →</a>
+          <a
+            href={toPath("/videos")}
+            use:route
+            class="text-[0.8rem] font-semibold">View all →</a
+          >
         </div>
         <div class="flex flex-col">
           {#each videosData.videos.slice(0, 8) as v}
             <a
-              href={`#/videos/${v.video_id}`}
+              href={toPath(`/videos/${v.video_id}`)}
+              use:route
               class="flex justify-between items-center py-[0.45rem] border-b border-line text-ink text-[0.85rem] hover:text-cobalt last:border-b-0"
             >
               <code

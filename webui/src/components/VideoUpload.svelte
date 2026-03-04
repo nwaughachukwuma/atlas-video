@@ -1,14 +1,30 @@
+<script lang="ts" module>
+  type Prop = {
+    accept?: string;
+    file?: File | null;
+    onChange?: (value: File | null) => void;
+  };
+</script>
+
 <script lang="ts">
   import { FilmIcon, UploadIcon, XIcon } from "lucide-svelte";
-  import { createEventDispatcher } from "svelte";
+  let {
+    accept = "video/*",
+    file = $bindable<File | null>(null),
+    onChange = () => {},
+  }: Prop = $props();
 
-  const dispatch = createEventDispatcher<{ change: File | null }>();
+  let dragging: boolean = $state(false);
+  let input: HTMLInputElement | null = $state(null);
 
-  export let accept: string = "video/*";
-  export let file: File | null = null;
+  function handleDragOver(e: DragEvent): void {
+    e.preventDefault();
+    dragging = true;
+  }
 
-  let dragging: boolean = false;
-  let input: HTMLInputElement;
+  function handleDragLeave(): void {
+    dragging = false;
+  }
 
   function handleDrop(e: DragEvent): void {
     e.preventDefault();
@@ -19,7 +35,7 @@
 
   function setFile(f: File): void {
     file = f;
-    dispatch("change", f);
+    onChange(f);
   }
 
   function handleInput(e: Event): void {
@@ -31,7 +47,7 @@
   function clear(): void {
     file = null;
     if (input) input.value = "";
-    dispatch("change", null);
+    onChange(null);
   }
 
   function formatSize(bytes: number): string {
@@ -49,9 +65,9 @@
         ? "border-solid border-success p-4"
         : "border-line"
   }`}
-  on:dragover|preventDefault={() => (dragging = true)}
-  on:dragleave={() => (dragging = false)}
-  on:drop={handleDrop}
+  ondragover={handleDragOver}
+  ondragleave={handleDragLeave}
+  ondrop={handleDrop}
   role="region"
   aria-label="Video file upload"
 >
@@ -69,7 +85,7 @@
       <button
         type="button"
         class="bg-transparent border-none text-muted p-1 leading-none hover:text-danger"
-        on:click={clear}
+        onclick={clear}
         title="Remove file"><XIcon size={16} strokeWidth={2} /></button
       >
     </div>
@@ -82,14 +98,14 @@
         Drag &amp; drop a video file here
       </p>
       <span class="text-muted text-[0.8rem] block mb-2">or</span>
-      <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
       <label class="btn-secondary cursor-pointer">
         Browse files
         <input
           bind:this={input}
           type="file"
           {accept}
-          on:change={handleInput}
+          onchange={handleInput}
           hidden
         />
       </label>

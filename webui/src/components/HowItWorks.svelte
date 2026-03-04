@@ -1,9 +1,5 @@
-<script lang="ts">
-  import { CircleQuestionMarkIcon, XIcon } from "lucide-svelte";
+<script lang="ts" module>
   import type { Step } from "../lib/types.ts";
-
-  let open: boolean = false;
-
   const steps: Step[] = [
     {
       num: "01",
@@ -34,9 +30,14 @@
   ];
 </script>
 
+<script lang="ts">
+  import { CircleQuestionMarkIcon, XIcon } from "lucide-svelte";
+  let open: boolean = false;
+</script>
+
 <button
   class="inline-flex items-center gap-[0.35rem] bg-transparent border border-line text-muted font-sans text-[0.8rem] font-semibold px-3 py-[0.38em] tracking-[0.01em] cursor-pointer transition-all duration-300 ease-linear whitespace-nowrap hover:border-cobalt hover:text-cobalt"
-  on:click={() => (open = true)}
+  onclick={() => (open = true)}
   title="How it works"
 >
   <CircleQuestionMarkIcon size={18} strokeWidth={1.5} />
@@ -48,11 +49,11 @@
   <!-- svelte-ignore a11y-no-static-element-interactions -->
   <div
     class="fixed inset-0 bg-black/50 flex items-center justify-center z-999"
-    on:click={() => (open = false)}
+    onclick={() => (open = false)}
   >
     <div
       class="bg-surface border border-line w-[480px] max-w-[92vw] max-h-[85vh] overflow-y-auto"
-      on:click|stopPropagation
+      onclick={(e) => e.stopPropagation()}
       role="dialog"
       tabindex="0"
       aria-modal="true"
@@ -68,7 +69,7 @@
         </span>
         <button
           class="bg-transparent border-none text-muted cursor-pointer p-[0.2em] flex items-center hover:text-ink"
-          on:click={() => (open = false)}
+          onclick={() => (open = false)}
           aria-label="Close"
         >
           <XIcon size={16} />

@@ -1,22 +1,28 @@
 <script lang="ts">
+  import { route } from "@mateothegreat/svelte5-router";
   import { FilmIcon, MessageSquareIcon } from "lucide-svelte";
   import { onMount, onDestroy } from "svelte";
   import { getVideo, search } from "../lib/api.ts";
   import type { Video, SearchResult } from "../lib/types.ts";
   import ChatPanel from "../components/ChatPanel.svelte";
+  import { toPath } from "../lib/routing.ts";
 
-  export let params: Record<string, string> = {};
-  const videoId: string = params.id;
+  let { route: routeResult } = $props();
 
-  let videoData: Video | null = null;
-  let loading: boolean = true;
-  let error: string | null = null;
-  let chatOpen: boolean = false;
-  let searchQuery: string = "";
-  let searchResults: SearchResult[] | null = null;
-  let searching: boolean = false;
-  let pollInterval: ReturnType<typeof setInterval> | null = null;
-  let taskStatus: string | null = null;
+  const videoId: string = $derived(
+    ((routeResult?.result?.path?.params?.id as string | undefined) ??
+      "") as string,
+  );
+
+  let videoData: Video | null = $state(null);
+  let loading: boolean = $state(true);
+  let error: string | null = $state(null);
+  let chatOpen: boolean = $state(false);
+  let searchQuery: string = $state("");
+  let searchResults: SearchResult[] | null = $state(null);
+  let searching: boolean = $state(false);
+  let pollInterval: ReturnType<typeof setInterval> | null = $state(null);
+  let taskStatus: string | null = $state(null);
 
   async function loadVideo(): Promise<void> {
     try {
@@ -80,7 +86,7 @@
 
 <div class="p-8 max-w-[860px]">
   <div class="mb-4 text-[0.85rem]">
-    <a href="#/videos">← All Videos</a>
+    <a href={toPath("/videos")} use:route>← All Videos</a>
   </div>
   <h2>
     <FilmIcon
@@ -118,17 +124,17 @@
         bind:value={searchQuery}
         placeholder="Search within this video…"
         class="flex-1"
-        on:keydown={(e) => e.key === "Enter" && doSearch()}
+        onkeydown={(e) => e.key === "Enter" && doSearch()}
       />
       <button
         class="btn-primary"
-        on:click={doSearch}
+        onclick={doSearch}
         disabled={searching || !searchQuery.trim()}
       >
         {#if searching}<span class="spinner"></span>{:else}Search{/if}
       </button>
       {#if searchResults !== null}
-        <button class="btn-secondary" on:click={clearSearch}>Clear</button>
+        <button class="btn-secondary" onclick={clearSearch}>Clear</button>
       {/if}
     </div>
 
@@ -187,7 +193,7 @@
 
     <button
       class="btn-primary mt-6 text-base px-[1.6em] py-[0.6em]"
-      on:click={() => (chatOpen = true)}
+      onclick={() => (chatOpen = true)}
     >
       <MessageSquareIcon
         size={16}
@@ -199,5 +205,5 @@
 </div>
 
 {#if chatOpen}
-  <ChatPanel {videoId} on:close={() => (chatOpen = false)} />
+  <ChatPanel {videoId} onClose={() => (chatOpen = false)} />
 {/if}

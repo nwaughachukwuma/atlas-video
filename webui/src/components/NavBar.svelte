@@ -1,4 +1,4 @@
-<script lang="ts">
+<script lang="ts" module>
   import {
     HouseIcon,
     MicIcon,
@@ -11,9 +11,7 @@
   } from "lucide-svelte";
   import type { NavLink } from "../lib/types.ts";
 
-  let { route } = $props();
-
-  let currentPath = route.result.path.params.id;
+  type Props = { basePath?: string };
 
   const links: NavLink[] = [
     { path: "/", icon: HouseIcon, label: "Home", title: "Atlas Video" },
@@ -54,10 +52,31 @@
       title: "Dashboard",
     },
   ];
+</script>
 
-  function isActive(path: string): boolean {
-    if (path === "/") return currentPath === "/";
-    return currentPath.startsWith(path);
+<script lang="ts">
+  import { active, route } from "@mateothegreat/svelte5-router";
+
+  let { basePath = "/" }: Props = $props();
+
+  function withBase(path: string): string {
+    return basePath === "/" ? path : `${basePath}${path}`;
+  }
+
+  function activeOptions(path: string): {
+    active: { class: string[]; absolute: boolean };
+  } {
+    return {
+      active: {
+        class: [
+          "text-cobalt",
+          "border-l-cobalt",
+          "bg-[rgba(19,81,170,0.06)]",
+          "font-bold",
+        ],
+        absolute: path === "/",
+      },
+    };
   }
 </script>
 
@@ -66,7 +85,8 @@
 >
   <div class="px-[1.1rem] pb-5 border-b border-line mb-3">
     <a
-      href="#/"
+      href={withBase("/")}
+      use:route
       class="font-sans text-[1.15rem] font-black text-cobalt flex items-center gap-[0.35rem] tracking-[-0.02em]"
     >
       <ZapIcon size={16} strokeWidth={2} />
@@ -80,14 +100,12 @@
     {#each links as l}
       <li>
         <a
-          href={`#${l.path}`}
-          class={`flex items-center gap-2 py-[0.55em] px-[1.1rem] text-[0.88rem] font-medium border-l-2 transition-all duration-300 ease-linear ${
-            isActive(l.path)
-              ? "text-cobalt border-l-cobalt bg-[rgba(19,81,170,0.06)] font-bold"
-              : "text-muted border-l-transparent hover:text-ink hover:bg-surface-alt"
-          }`}
+          href={withBase(l.path)}
+          use:route
+          use:active={activeOptions(l.path)}
+          class="flex items-center gap-2 py-[0.55em] px-[1.1rem] text-[0.88rem] font-medium border-l-2 transition-all duration-300 ease-linear text-muted border-l-transparent hover:text-ink hover:bg-surface-alt"
         >
-          <svelte:component this={l.icon} size={15} strokeWidth={1.5} />
+          <l.icon size={15} strokeWidth={1.5} />
           <span>{l.label}</span>
         </a>
       </li>
