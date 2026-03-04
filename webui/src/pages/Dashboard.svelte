@@ -1,6 +1,7 @@
 <script>
   import { onMount } from "svelte";
   import { stats, health, queueList, listVideos } from "../lib/api.js";
+  import { LayoutDashboardIcon } from "lucide-svelte";
 
   let statsData = null;
   let healthData = null;
@@ -50,7 +51,14 @@
 
 <div class="p-8 max-w-[900px]">
   <div class="mb-6">
-    <h2 class="text-[1.5rem] mb-1">Dashboard</h2>
+    <h2 class="text-[1.5rem] mb-1 flex items-center gap-1.5">
+      <LayoutDashboardIcon
+        size={20}
+        strokeWidth={2}
+        style="display:inline;vertical-align:middle;"
+      />
+      Dashboard
+    </h2>
     <p class="text-muted text-[0.9rem] mb-0">
       System health, usage metrics, and storage overview.
     </p>
@@ -225,9 +233,7 @@
         {#if statsData?.chat_index_stats}
           <pre class="m-0 text-[0.75rem]">{statsData.chat_index_stats}</pre>
         {:else}
-          <p class="text-muted text-[0.85rem] mb-0">
-            No chat stats available.
-          </p>
+          <p class="text-muted text-[0.85rem] mb-0">No chat stats available.</p>
         {/if}
       </div>
     </div>

@@ -74,7 +74,7 @@
 </script>
 
 <div
-  class="fixed bottom-6 right-6 w-[380px] max-h-[520px] bg-surface border border-line rounded-xl flex flex-col z-[1000]"
+  class="fixed bottom-6 right-6 w-96 max-h-[520px] bg-surface border border-line rounded-xl flex flex-col z-[1000]"
 >
   <div
     class="flex items-center justify-between px-4 py-3 border-b border-line font-semibold text-[0.9rem]"
@@ -104,7 +104,7 @@
     {#each messages as m}
       <div class={`flex ${m.role === "user" ? "justify-end" : ""}`}>
         <span
-          class={`max-w-[80%] px-[0.8em] py-[0.5em] rounded-[10px] text-[0.88rem] whitespace-pre-wrap break-words ${
+          class={`max-w-[80%] px-[0.8em] py-[0.5em] rounded-[10px] text-[0.88rem] whitespace-pre-wrap wrap-break-word ${
             m.role === "user"
               ? "bg-cobalt text-white"
               : "bg-surface-alt text-ink"

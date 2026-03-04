@@ -59,7 +59,7 @@
 </script>
 
 <nav
-  class="w-[210px] min-h-screen bg-surface border-r border-line flex flex-col py-5 sticky top-0 shrink-0"
+  class="w-52 min-h-screen bg-surface border-r border-line flex flex-col py-5 sticky top-0 shrink-0"
 >
   <div class="px-[1.1rem] pb-5 border-b border-line mb-3">
     <a

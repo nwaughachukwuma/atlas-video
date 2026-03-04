@@ -41,7 +41,7 @@
 </script>
 
 <div class="p-8 max-w-[760px]">
-  <h2>
+  <h2 class="flex items-center gap-1.5">
     <MicIcon
       size={20}
       strokeWidth={2}

@@ -49,7 +49,7 @@
 </script>
 
 <div class="p-8 max-w-[900px]">
-  <h2>
+  <h2 class="flex items-center gap-1.5">
     <FilmIcon
       size={20}
       strokeWidth={2}

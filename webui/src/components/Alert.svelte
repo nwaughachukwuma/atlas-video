@@ -32,7 +32,7 @@
       {#if type === "success"}<CircleCheckIcon size={15} />{/if}
       {#if type === "info"}<InfoIcon size={15} />{/if}
     </div>
-    <span class="flex-1 break-words">{message}</span>
+    <span class="flex-1 wrap-break-word">{message}</span>
     {#if dismissible}
       <button
         class="shrink-0 bg-transparent border-none p-0 text-inherit opacity-60 cursor-pointer flex mt-[0.1em] hover:opacity-100"
