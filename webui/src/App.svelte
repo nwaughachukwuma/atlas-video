@@ -5,6 +5,7 @@
   import Transcribe from './pages/Transcribe.svelte';
   import Extract from './pages/Extract.svelte';
   import Index from './pages/Index.svelte';
+  import Search from './pages/Search.svelte';
   import Videos from './pages/Videos.svelte';
   import VideoDetail from './pages/VideoDetail.svelte';
   import Queue from './pages/Queue.svelte';
@@ -15,6 +16,7 @@
     '/transcribe': Transcribe,
     '/extract': Extract,
     '/index': Index,
+    '/search': Search,
     '/videos': Videos,
     '/videos/:id': VideoDetail,
     '/queue': Queue,

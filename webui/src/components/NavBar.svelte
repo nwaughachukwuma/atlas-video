@@ -6,6 +6,7 @@
     { path: '/transcribe',label: '🎙️ Transcribe',  title: 'Transcribe' },
     { path: '/extract',   label: '🔬 Extract',     title: 'Extract Insights' },
     { path: '/index',     label: '📦 Index',       title: 'Index Video' },
+    { path: '/search',    label: '🔎 Search',      title: 'Semantic Search' },
     { path: '/videos',    label: '🎬 Videos',      title: 'Indexed Videos' },
     { path: '/queue',     label: '📋 Queue',       title: 'Task Queue' },
     { path: '/stats',     label: '📊 Stats',       title: 'System Stats' },
