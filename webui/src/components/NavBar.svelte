@@ -11,42 +11,40 @@
   } from "lucide-svelte";
   import type { NavLink } from "../lib/types.ts";
 
-  type Props = { basePath?: string };
-
   const links: NavLink[] = [
-    { path: "#/", icon: HouseIcon, label: "Home", title: "Atlas Video" },
+    { path: "/", icon: HouseIcon, label: "Home", title: "Atlas Video" },
     {
-      path: "#/transcribe",
+      path: "/transcribe",
       icon: MicIcon,
       label: "Transcribe",
       title: "Transcribe",
     },
     {
-      path: "#/extract",
+      path: "/extract",
       icon: FlaskConicalIcon,
       label: "Extract",
       title: "Extract Insights",
     },
     {
-      path: "#/index",
+      path: "/index",
       icon: DatabaseIcon,
       label: "Index",
       title: "Index Video",
     },
     {
-      path: "#/videos",
+      path: "/videos",
       icon: FilmIcon,
       label: "Videos",
       title: "Indexed Videos",
     },
     {
-      path: "#/queue",
+      path: "/queue",
       icon: ClipboardListIcon,
       label: "Queue",
       title: "Task Queue",
     },
     {
-      path: "#/dashboard",
+      path: "/dashboard",
       icon: LayoutDashboardIcon,
       label: "Dashboard",
       title: "Dashboard",
@@ -56,12 +54,7 @@
 
 <script lang="ts">
   import { active, route } from "@mateothegreat/svelte5-router";
-
-  let { basePath = "/" }: Props = $props();
-
-  function withBase(path: string): string {
-    return basePath === "/" ? path : `${basePath}${path}`;
-  }
+  import { toPath } from "../lib/routing.ts";
 
   function activeOptions(path: string): {
     active: { class: string[]; absolute: boolean };
@@ -85,7 +78,7 @@
 >
   <div class="px-[1.1rem] pb-5 border-b border-line mb-3">
     <a
-      href={withBase("/")}
+      href={toPath("/")}
       use:route
       class="font-sans text-[1.15rem] font-black text-cobalt flex items-center gap-[0.35rem] tracking-[-0.02em]"
     >
@@ -100,7 +93,7 @@
     {#each links as l}
       <li>
         <a
-          href={withBase(l.path)}
+          href={toPath(l.path)}
           use:route
           use:active={activeOptions(l.path)}
           class="flex items-center gap-2 py-[0.55em] px-[1.1rem] text-[0.88rem] font-medium border-l-2 transition-all duration-300 ease-linear text-muted border-l-transparent hover:text-ink hover:bg-surface-alt"

@@ -334,16 +334,32 @@ def create_app() -> FastAPI:
     return app
 
 
+class _SPAStaticFiles(StaticFiles):
+    """StaticFiles that falls back to index.html for any unmatched path.
+
+    This is required for a history-mode SPA (e.g. Svelte with client-side
+    routing) so that refreshing or deep-linking to ``/ui/dashboard`` serves
+    the same ``index.html`` entry-point instead of a 404.
+    """
+
+    async def get_response(self, path: str, scope):
+        try:
+            return await super().get_response(path, scope)
+        except Exception:
+            # Any path that doesn't correspond to a real file falls back to the
+            # SPA entry-point so the client-side router can take over.
+            return FileResponse(_UI_DIR / "index.html")
+
+
 def _mount_ui(app: FastAPI) -> None:
     """Mount the pre-built Svelte web UI at /ui if the assets directory exists."""
     if not _UI_DIR.exists():
         return
 
-    # Serve the SPA index.html for the bare /ui path (redirect to /ui/)
+    # Serve the SPA index.html for the bare /ui path.
     @app.get("/ui", include_in_schema=False)
     def ui_root() -> FileResponse:
         return FileResponse(_UI_DIR / "index.html")
 
-    # Mount all static assets under /ui/ — html=True serves index.html for
-    # unknown sub-paths, which is required for the hash-based SPA router.
-    app.mount("/ui", StaticFiles(directory=str(_UI_DIR), html=True), name="ui")
+    # Mount all static assets under /ui/.
+    app.mount("/ui", _SPAStaticFiles(directory=str(_UI_DIR), html=True), name="ui")

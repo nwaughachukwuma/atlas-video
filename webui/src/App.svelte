@@ -10,26 +10,25 @@
   import VideoDetail from "./pages/VideoDetail.svelte";
   import Queue from "./pages/Queue.svelte";
   import Dashboard from "./pages/Dashboard.svelte";
-  import { getBasePath } from "./lib/routing.ts";
+  import { BASE_PATH } from "./lib/routing.ts";
 
-  const basePath = getBasePath();
   const routes: RouteConfig[] = [
-    { path: "#/", component: Home },
-    { path: "#/transcribe", component: Transcribe },
-    { path: "#/extract", component: Extract },
-    { path: "#/index", component: Index },
-    { path: "#/videos", component: Videos },
-    { path: "#/videos/:id", component: VideoDetail },
-    { path: "#/queue", component: Queue },
-    { path: "#/queue/:id", component: Queue },
-    { path: "#/dashboard", component: Dashboard },
+    { path: "/", component: Home },
+    { path: "/transcribe", component: Transcribe },
+    { path: "/extract", component: Extract },
+    { path: "/index", component: Index },
+    { path: "/videos", component: Videos },
+    { path: "/videos/:id", component: VideoDetail },
+    { path: "/queue", component: Queue },
+    { path: "/queue/:id", component: Queue },
+    { path: "/dashboard", component: Dashboard },
   ];
 </script>
 
-<NavBar {basePath} />
+<NavBar />
 
 <main class="flex-1 overflow-y-auto min-h-screen">
-  <Router {routes} {basePath} />
+  <Router {routes} basePath={BASE_PATH} />
 </main>
 
 <div class="fixed top-4 right-5 z-100">

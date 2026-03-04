@@ -18,8 +18,8 @@
   let healthData = $state<HealthResponse | null>(null);
   let queueData = $state<QueueListResponse | null>(null);
   let videosData = $state<ListVideosResponse | null>(null);
-  
-    let loading = $state<boolean>(true);
+
+  let loading = $state<boolean>(true);
   let error = $state<string | null>(null);
 
   onMount(async () => {
