@@ -1,18 +1,18 @@
 <script>
-  export let currentPath = '/';
+  export let currentPath = "/";
 
   const links = [
-    { path: '/',          label: '🏠 Home',       title: 'Atlas Video' },
-    { path: '/transcribe',label: '🎙️ Transcribe',  title: 'Transcribe' },
-    { path: '/extract',   label: '🔬 Extract',     title: 'Extract Insights' },
-    { path: '/index',     label: '📦 Index',       title: 'Index Video' },
-    { path: '/videos',    label: '🎬 Videos',      title: 'Indexed Videos' },
-    { path: '/queue',     label: '📋 Queue',       title: 'Task Queue' },
-    { path: '/stats',     label: '📊 Stats',       title: 'System Stats' },
+    { path: "/", label: "🏠 Home", title: "Atlas Video" },
+    { path: "/transcribe", label: "🎙️ Transcribe", title: "Transcribe" },
+    { path: "/extract", label: "🔬 Extract", title: "Extract Insights" },
+    { path: "/index", label: "📦 Index", title: "Index Video" },
+    { path: "/videos", label: "🎬 Videos", title: "Indexed Videos" },
+    { path: "/queue", label: "📋 Queue", title: "Task Queue" },
+    { path: "/dashboard", label: "📊 Dashboard", title: "Dashboard" },
   ];
 
   function isActive(path) {
-    if (path === '/') return currentPath === '/';
+    if (path === "/") return currentPath === "/";
     return currentPath.startsWith(path);
   }
 </script>
@@ -20,7 +20,7 @@
 <nav>
   <div class="logo">
     <a href="#/">⚡ Atlas</a>
-    <span class="version">Video AI</span>
+    <span class="version">Multimodal AI</span>
   </div>
   <ul>
     {#each links as l}
@@ -30,8 +30,12 @@
     {/each}
   </ul>
   <div class="nav-footer">
-    <span class="muted">Atlas Video Engine</span>
-    <a href="https://github.com/nwaughachukwuma/atlas-video" target="_blank" class="gh-link">GitHub ↗</a>
+    <span class="muted">Atlas Multimodal Engine</span>
+    <a
+      href="https://github.com/nwaughachukwuma/atlas-video"
+      target="_blank"
+      class="gh-link">GitHub ↗</a
+    >
   </div>
 </nav>
 
@@ -79,11 +83,14 @@
     border-left: 2px solid transparent;
     transition: all 0.15s;
   }
-  li a:hover { color: var(--text); background: var(--bg3); }
+  li a:hover {
+    color: var(--text);
+    background: var(--bg3);
+  }
   li.active a {
     color: var(--primary);
     border-left-color: var(--primary);
-    background: rgba(99,102,241,0.1);
+    background: rgba(99, 102, 241, 0.1);
   }
   .nav-footer {
     padding: 1rem 1.1rem 0;
@@ -93,7 +100,13 @@
     flex-direction: column;
     gap: 0.3em;
   }
-  .muted { color: var(--text-muted); }
-  .gh-link { color: var(--text-muted); }
-  .gh-link:hover { color: var(--primary); }
+  .muted {
+    color: var(--text-muted);
+  }
+  .gh-link {
+    color: var(--text-muted);
+  }
+  .gh-link:hover {
+    color: var(--primary);
+  }
 </style>
