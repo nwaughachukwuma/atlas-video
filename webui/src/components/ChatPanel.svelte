@@ -73,8 +73,12 @@
   }
 </script>
 
-<div class="panel">
-  <div class="panel-header">
+<div
+  class="fixed bottom-6 right-6 w-[380px] max-h-[520px] bg-surface border border-line rounded-xl flex flex-col z-[1000]"
+>
+  <div
+    class="flex items-center justify-between px-4 py-3 border-b border-line font-semibold text-[0.9rem]"
+  >
     <span
       ><MessageSquareIcon
         size={16}
@@ -82,120 +86,52 @@
         style="display:inline;vertical-align:middle;"
       /> Chat with Video</span
     >
-    <button class="close-btn btn-secondary" on:click={() => dispatch("close")}
+    <button
+      class="btn-secondary px-[0.6em] py-[0.2em]"
+      on:click={() => dispatch("close")}
       ><XIcon size={14} strokeWidth={2} /></button
     >
   </div>
-  <div class="messages" bind:this={listEl}>
+  <div
+    class="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2"
+    bind:this={listEl}
+  >
     {#if messages.length === 0}
-      <p class="empty">Ask a question about this video…</p>
+      <p class="text-muted text-[0.85rem] text-center m-auto">
+        Ask a question about this video…
+      </p>
     {/if}
     {#each messages as m}
-      <div
-        class="msg"
-        class:user={m.role === "user"}
-        class:assistant={m.role === "assistant"}
-      >
-        <span class="bubble"
-          >{m.text || (streaming && m.role === "assistant" ? "…" : "")}</span
+      <div class={`flex ${m.role === "user" ? "justify-end" : ""}`}>
+        <span
+          class={`max-w-[80%] px-[0.8em] py-[0.5em] rounded-[10px] text-[0.88rem] whitespace-pre-wrap break-words ${
+            m.role === "user"
+              ? "bg-cobalt text-white"
+              : "bg-surface-alt text-ink"
+          }`}>{m.text || (streaming && m.role === "assistant" ? "…" : "")}</span
         >
       </div>
     {/each}
   </div>
-  <div class="input-row">
+  <div class="flex gap-2 px-4 py-3 border-t border-line">
     <textarea
       bind:value={query}
       on:keydown={handleKey}
       placeholder="Ask something… (Enter to send)"
       rows="2"
       disabled={streaming}
+      class="flex-1 resize-none text-[0.85rem]"
     ></textarea>
     {#if streaming}
-      <button class="btn-danger" on:click={cancel}>Stop</button>
+      <button class="btn-danger self-end whitespace-nowrap" on:click={cancel}
+        >Stop</button
+      >
     {:else}
-      <button class="btn-primary" on:click={send} disabled={!query.trim()}
-        >Send</button
+      <button
+        class="btn-primary self-end whitespace-nowrap"
+        on:click={send}
+        disabled={!query.trim()}>Send</button
       >
     {/if}
   </div>
 </div>
-
-<style>
-  .panel {
-    position: fixed;
-    bottom: 1.5rem;
-    right: 1.5rem;
-    width: 380px;
-    max-height: 520px;
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    box-shadow: var(--shadow);
-    display: flex;
-    flex-direction: column;
-    z-index: 1000;
-  }
-  .panel-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--border);
-    font-weight: 600;
-    font-size: 0.9rem;
-  }
-  .close-btn {
-    padding: 0.2em 0.6em;
-  }
-  .messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 0.75rem 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  .empty {
-    color: var(--text-muted);
-    font-size: 0.85rem;
-    text-align: center;
-    margin: auto;
-  }
-  .msg {
-    display: flex;
-  }
-  .msg.user {
-    justify-content: flex-end;
-  }
-  .bubble {
-    max-width: 80%;
-    padding: 0.5em 0.8em;
-    border-radius: 10px;
-    font-size: 0.88rem;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-  .user .bubble {
-    background: var(--primary);
-    color: #fff;
-  }
-  .assistant .bubble {
-    background: var(--bg3);
-    color: var(--text);
-  }
-  .input-row {
-    display: flex;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
-    border-top: 1px solid var(--border);
-  }
-  textarea {
-    flex: 1;
-    resize: none;
-    font-size: 0.85rem;
-  }
-  button {
-    align-self: flex-end;
-    white-space: nowrap;
-  }
-</style>

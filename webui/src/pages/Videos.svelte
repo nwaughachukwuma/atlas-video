@@ -48,7 +48,7 @@
   }
 </script>
 
-<div class="page">
+<div class="p-8 max-w-[900px]">
   <h2>
     <FilmIcon
       size={20}
@@ -56,16 +56,17 @@
       style="display:inline;vertical-align:middle;"
     /> Indexed Videos
   </h2>
-  <p class="desc">
+  <p class="text-muted mb-5">
     All videos currently in your local vector store. Click any video to explore
     or chat with it.
   </p>
 
-  <div class="search-bar">
+  <div class="flex gap-2 mb-6">
     <input
       type="search"
       bind:value={searchQuery}
       placeholder="Search across all videos…"
+      class="flex-1"
       on:keydown={(e) => e.key === "Enter" && doSearch()}
     />
     <button
@@ -84,22 +85,31 @@
 
   {#if searchResults !== null}
     <section>
-      <h3>
-        Search results <span class="muted">({searchResults.length})</span>
+      <h3 class="mb-3">
+        Search results <span class="text-muted text-[0.85rem]"
+          >({searchResults.length})</span
+        >
       </h3>
       {#if searchResults.length === 0}
-        <p class="muted">No results found.</p>
+        <p class="text-muted text-[0.85rem]">No results found.</p>
       {:else}
         {#each searchResults as r}
-          <div class="card result-card">
-            <div class="result-header">
-              <a href={`#/videos/${r.video_id}`} class="vid-link"
-                >{r.video_id}</a
+          <div class="card mb-3">
+            <div class="flex justify-between mb-[0.4rem]">
+              <a
+                href={`#/videos/${r.video_id}`}
+                class="font-mono text-[0.85rem] text-cobalt">{r.video_id}</a
               >
-              <span class="score">score: {r.score?.toFixed(3) ?? "—"}</span>
+              <span class="text-[0.78rem] text-muted"
+                >score: {r.score?.toFixed(3) ?? "—"}</span
+              >
             </div>
-            {#if r.description}<p class="excerpt">{r.description}</p>{/if}
-            {#if r.transcript}<p class="excerpt muted">{r.transcript}</p>{/if}
+            {#if r.description}<p class="text-[0.85rem] text-muted mt-1 mb-0">
+                {r.description}
+              </p>{/if}
+            {#if r.transcript}<p class="text-[0.85rem] text-muted mt-1 mb-0">
+                {r.transcript}
+              </p>{/if}
           </div>
         {/each}
       {/if}
@@ -107,18 +117,30 @@
   {:else if loading}
     <p><span class="spinner"></span> Loading videos…</p>
   {:else if videos.length === 0}
-    <div class="empty card">
-      <p>No videos indexed yet.</p>
-      <a href="#/index" class="btn-primary">Index your first video →</a>
+    <div class="card text-center py-10">
+      <p class="mb-4">No videos indexed yet.</p>
+      <a
+        href="#/index"
+        class="btn-primary inline-block px-6 py-2.5 text-[0.95rem]"
+        >Index your first video →</a
+      >
     </div>
   {:else}
-    <div class="grid">
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
       {#each videos as v}
-        <a href={`#/videos/${v.video_id}`} class="video-card card">
-          <div class="vid-icon"><FilmIcon size={20} strokeWidth={1.5} /></div>
-          <div class="vid-meta">
-            <span class="vid-id" title={v.video_id}>{v.video_id}</span>
-            {#if v.indexed_at}<span class="muted"
+        <a
+          href={`#/videos/${v.video_id}`}
+          class="card flex gap-3 items-start text-ink transition-[border-color] duration-[0.15s] hover:border-cobalt"
+        >
+          <div class="text-cobalt flex items-center">
+            <FilmIcon size={20} strokeWidth={1.5} />
+          </div>
+          <div class="flex flex-col gap-1 min-w-0">
+            <span
+              class="text-[0.8rem] font-mono whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]"
+              title={v.video_id}>{v.video_id}</span
+            >
+            {#if v.indexed_at}<span class="text-muted text-[0.85rem]"
                 >{formatDate(v.indexed_at)}</span
               >{/if}
             {#if v.chunk_count !== undefined}<span class="tag"
@@ -130,89 +152,3 @@
     </div>
   {/if}
 </div>
-
-<style>
-  .page {
-    padding: 2rem;
-    max-width: 900px;
-  }
-  .desc {
-    color: var(--text-muted);
-    margin-bottom: 1.25rem;
-  }
-  .muted {
-    color: var(--text-muted);
-    font-size: 0.85rem;
-  }
-  .search-bar {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1.5rem;
-  }
-  .search-bar input {
-    flex: 1;
-  }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 1rem;
-  }
-  .video-card {
-    display: flex;
-    gap: 0.75rem;
-    align-items: flex-start;
-    color: var(--text);
-    transition: border-color 0.15s;
-  }
-  .video-card:hover {
-    border-color: var(--primary);
-  }
-  .vid-icon {
-    color: var(--color-cobalt);
-    display: flex;
-    align-items: center;
-  }
-  .vid-meta {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    min-width: 0;
-  }
-  .vid-id {
-    font-size: 0.8rem;
-    font-family: monospace;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 150px;
-  }
-  .empty {
-    text-align: center;
-    padding: 2.5rem;
-  }
-  .result-card {
-    margin-bottom: 0.75rem;
-  }
-  .result-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 0.4rem;
-  }
-  .vid-link {
-    font-family: monospace;
-    font-size: 0.85rem;
-    color: var(--primary);
-  }
-  .score {
-    font-size: 0.78rem;
-    color: var(--text-muted);
-  }
-  .excerpt {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    margin: 0.25rem 0 0;
-  }
-  h3 {
-    margin-bottom: 0.75rem;
-  }
-</style>

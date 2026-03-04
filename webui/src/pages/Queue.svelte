@@ -62,10 +62,10 @@
   }
 </script>
 
-<div class="page">
+<div class="p-8 max-w-[860px]">
   {#if taskId}
     <!-- Single task view -->
-    <div class="breadcrumb"><a href="#/queue">← All Tasks</a></div>
+    <div class="mb-4 text-[0.85rem]"><a href="#/queue">← All Tasks</a></div>
     <h2>
       <ClipboardListIcon
         size={20}
@@ -78,53 +78,62 @@
     {:else if error}
       <div class="error-box">{error}</div>
     {:else if task}
-      <div class="card task-detail">
-        <div class="task-header">
-          <span class:active={task.status === "running"} class="status-dot"
+      <div class="card">
+        <div class="flex items-center gap-3 mb-4">
+          <span
+            class={`w-2 h-2 rounded-full ${
+              task.status === "running"
+                ? "bg-cobalt shadow-[0_0_0_3px_rgba(59,130,246,0.3)] animate-pulse"
+                : "bg-muted"
+            }`}
           ></span>
-          <code>{task.id}</code>
+          <code class="text-[0.82rem]">{task.id}</code>
           <span class={badgeClass(task.status)}>{task.status}</span>
         </div>
-        <div class="meta-grid">
-          <div class="meta-row">
-            <span class="key">Command</span><span class="val"
-              >{task.command}</span
+        <div class="flex flex-col gap-[0.4rem]">
+          <div class="flex gap-4 text-[0.88rem]">
+            <span class="text-muted min-w-[100px]">Command</span><span
+              class="text-ink">{task.command}</span
             >
           </div>
-          <div class="meta-row">
-            <span class="key">Label</span><span class="val">{task.label}</span>
-          </div>
-          <div class="meta-row">
-            <span class="key">Created</span><span class="val"
-              >{formatDate(task.created_at)}</span
+          <div class="flex gap-4 text-[0.88rem]">
+            <span class="text-muted min-w-[100px]">Label</span><span
+              class="text-ink">{task.label}</span
             >
           </div>
-          <div class="meta-row">
-            <span class="key">Started</span><span class="val"
-              >{formatDate(task.started_at)}</span
+          <div class="flex gap-4 text-[0.88rem]">
+            <span class="text-muted min-w-[100px]">Created</span><span
+              class="text-ink">{formatDate(task.created_at)}</span
             >
           </div>
-          <div class="meta-row">
-            <span class="key">Finished</span><span class="val"
-              >{formatDate(task.finished_at)}</span
+          <div class="flex gap-4 text-[0.88rem]">
+            <span class="text-muted min-w-[100px]">Started</span><span
+              class="text-ink">{formatDate(task.started_at)}</span
             >
           </div>
-          {#if task.duration}<div class="meta-row">
-              <span class="key">Duration</span><span class="val"
-                >{task.duration}</span
+          <div class="flex gap-4 text-[0.88rem]">
+            <span class="text-muted min-w-[100px]">Finished</span><span
+              class="text-ink">{formatDate(task.finished_at)}</span
+            >
+          </div>
+          {#if task.duration}<div class="flex gap-4 text-[0.88rem]">
+              <span class="text-muted min-w-[100px]">Duration</span><span
+                class="text-ink">{task.duration}</span
               >
             </div>{/if}
         </div>
         {#if task.error}
-          <div class="error-box" style="margin-top:1rem">{task.error}</div>
+          <div class="error-box mt-4">{task.error}</div>
         {/if}
         {#if task.output_path}
-          <div class="success-box" style="margin-top:1rem">
-            Output: <code>{task.output_path}</code>
+          <div class="success-box mt-4">
+            Output: <code class="font-mono text-[0.78rem]"
+              >{task.output_path}</code
+            >
           </div>
         {/if}
         {#if task.status === "pending" || task.status === "running"}
-          <p class="muted" style="margin-top:1rem">
+          <p class="text-muted text-[0.85rem] mt-4">
             <span class="spinner"></span> Refreshing every 5s…
           </p>
         {/if}
@@ -139,9 +148,9 @@
         style="display:inline;vertical-align:middle;"
       /> Task Queue
     </h2>
-    <p class="desc">Monitor and inspect background tasks.</p>
+    <p class="text-muted mb-5">Monitor and inspect background tasks.</p>
 
-    <div class="filters">
+    <div class="flex flex-wrap gap-[0.4rem] mb-5">
       {#each statusOptions as s}
         <button
           class={statusFilter === s ? "btn-primary" : "btn-secondary"}
@@ -163,19 +172,24 @@
     {:else if error}
       <div class="error-box">{error}</div>
     {:else if tasks.length === 0}
-      <div class="empty card"><p>No tasks found.</p></div>
+      <div class="card text-center py-8"><p>No tasks found.</p></div>
     {:else}
-      <div class="task-list">
+      <div class="flex flex-col gap-2">
         {#each tasks as t}
-          <a href={`#/queue/${t.id}`} class="task-row card">
-            <div class="task-main">
+          <a
+            href={`#/queue/${t.id}`}
+            class="card flex flex-col gap-[0.3rem] text-ink transition-[border-color] duration-[0.15s] hover:border-cobalt"
+          >
+            <div class="flex items-center gap-2">
               <span class={badgeClass(t.status)}>{t.status}</span>
-              <span class="cmd tag">{t.command}</span>
-              <span class="label">{t.label}</span>
+              <span class="tag text-[0.78rem]">{t.command}</span>
+              <span class="text-[0.88rem] flex-1">{t.label}</span>
             </div>
-            <div class="task-sub">
-              <code class="tid">{t.id}</code>
-              <span class="muted">{formatDate(t.created_at)}</span>
+            <div class="flex gap-4 items-center">
+              <code class="text-[0.75rem] font-mono text-muted">{t.id}</code>
+              <span class="text-muted text-[0.85rem]"
+                >{formatDate(t.created_at)}</span
+              >
             </div>
           </a>
         {/each}
@@ -183,115 +197,3 @@
     {/if}
   {/if}
 </div>
-
-<style>
-  .page {
-    padding: 2rem;
-    max-width: 860px;
-  }
-  .breadcrumb {
-    margin-bottom: 1rem;
-    font-size: 0.85rem;
-  }
-  .desc {
-    color: var(--text-muted);
-    margin-bottom: 1.25rem;
-  }
-  .muted {
-    color: var(--text-muted);
-    font-size: 0.85rem;
-  }
-  .filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    margin-bottom: 1.25rem;
-  }
-  .task-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  .task-row {
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
-    color: var(--text);
-    transition: border-color 0.15s;
-  }
-  .task-row:hover {
-    border-color: var(--primary);
-  }
-  .task-main {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .task-sub {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-  }
-  .label {
-    font-size: 0.88rem;
-    flex: 1;
-  }
-  .cmd {
-    font-size: 0.78rem;
-  }
-  .tid {
-    font-size: 0.75rem;
-    font-family: monospace;
-    color: var(--text-muted);
-  }
-  .empty {
-    text-align: center;
-    padding: 2rem;
-  }
-  .task-detail code {
-    font-size: 0.82rem;
-  }
-  .task-header {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-  }
-  .status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--text-muted);
-  }
-  .status-dot.active {
-    background: var(--info);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
-    animation: pulse 1.5s infinite;
-  }
-  @keyframes pulse {
-    0%,
-    100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.5;
-    }
-  }
-  .meta-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-  }
-  .meta-row {
-    display: flex;
-    gap: 1rem;
-    font-size: 0.88rem;
-  }
-  .key {
-    color: var(--text-muted);
-    min-width: 100px;
-  }
-  .val {
-    color: var(--text);
-  }
-</style>

@@ -18,21 +18,24 @@
 
 {#if visible && message}
   <div
-    class="alert"
-    class:alert-error={type === "error"}
-    class:alert-success={type === "success"}
-    class:alert-info={type === "info"}
+    class={`flex items-start gap-[0.6rem] px-[0.9rem] py-[0.65rem] my-3 text-[0.83rem] font-mono border leading-[1.4] ${
+      type === "error"
+        ? "bg-[#18070a] border-[#7f1d1d] text-[#fca5a5]"
+        : type === "success"
+          ? "bg-[#011a11] border-[#065f46] text-[#6ee7b7]"
+          : "bg-[#0c1a2e] border-[#1e3a5f] text-[#93c5fd]"
+    }`}
     role="alert"
   >
-    <div class="alert-icon">
+    <div class="shrink-0 mt-[0.05em] flex">
       {#if type === "error"}<CircleAlertIcon size={15} />{/if}
       {#if type === "success"}<CircleCheckIcon size={15} />{/if}
       {#if type === "info"}<InfoIcon size={15} />{/if}
     </div>
-    <span class="alert-msg">{message}</span>
+    <span class="flex-1 break-words">{message}</span>
     {#if dismissible}
       <button
-        class="alert-close"
+        class="shrink-0 bg-transparent border-none p-0 text-inherit opacity-60 cursor-pointer flex mt-[0.1em] hover:opacity-100"
         on:click={() => (visible = false)}
         aria-label="Dismiss"
       >
@@ -41,55 +44,3 @@
     {/if}
   </div>
 {/if}
-
-<style>
-  .alert {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.6rem;
-    padding: 0.65rem 0.9rem;
-    margin: 0.75rem 0;
-    font-size: 0.83rem;
-    font-family: var(--font-mono);
-    border: 1px solid;
-    line-height: 1.4;
-  }
-  .alert-error {
-    background: #18070a;
-    border-color: #7f1d1d;
-    color: #fca5a5;
-  }
-  .alert-success {
-    background: #011a11;
-    border-color: #065f46;
-    color: #6ee7b7;
-  }
-  .alert-info {
-    background: #0c1a2e;
-    border-color: #1e3a5f;
-    color: #93c5fd;
-  }
-  .alert-icon {
-    flex-shrink: 0;
-    margin-top: 0.05em;
-    display: flex;
-  }
-  .alert-msg {
-    flex: 1;
-    word-break: break-word;
-  }
-  .alert-close {
-    flex-shrink: 0;
-    background: transparent;
-    border: none;
-    padding: 0;
-    color: inherit;
-    opacity: 0.6;
-    cursor: pointer;
-    display: flex;
-    margin-top: 0.1em;
-  }
-  .alert-close:hover {
-    opacity: 1;
-  }
-</style>

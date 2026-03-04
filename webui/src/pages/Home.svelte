@@ -49,92 +49,36 @@
   ];
 </script>
 
-<div class="home">
-  <header>
-    <h1>
+<div class="p-8 max-w-[960px]">
+  <header class="mb-10">
+    <h1 class="text-[2.5rem] mb-2">
       <ZapIcon
         size={28}
         strokeWidth={2.5}
         style="display:inline;vertical-align:baseline;"
-      /> Atlas <span class="accent">Video</span>
+      /> Atlas <span class="text-cobalt">Video</span>
     </h1>
-    <p class="subtitle">
+    <p class="text-muted text-[1.05rem] max-w-[580px] !mb-0">
       Multimodal AI engine for video insights — transcription, semantic
       extraction, semantic search, and conversational chat. All running locally.
     </p>
   </header>
 
-  <section class="features">
+  <section
+    class="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 mb-8"
+  >
     {#each features as f}
-      <a href={`#${f.path}`} class="feature-card card">
-        <span class="feat-icon"
+      <a
+        href={`#${f.path}`}
+        class="card flex flex-col gap-[0.4rem] text-ink transition-[border-color,transform] duration-[0.15s] hover:border-cobalt hover:-translate-y-0.5"
+      >
+        <span class="text-cobalt flex items-center"
           ><svelte:component this={f.icon} size={24} strokeWidth={1.5} /></span
         >
-        <h3>{f.title}</h3>
-        <p>{f.desc}</p>
-        <span class="go-btn">Explore →</span>
+        <h3 class="!m-0 text-[1rem]">{f.title}</h3>
+        <p class="text-muted text-[0.85rem] flex-1 !m-0">{f.desc}</p>
+        <span class="text-cobalt text-[0.85rem] font-semibold">Explore →</span>
       </a>
     {/each}
   </section>
 </div>
-
-<style>
-  .home {
-    padding: 2rem;
-    max-width: 960px;
-  }
-  header {
-    margin-bottom: 2.5rem;
-  }
-  h1 {
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
-  }
-  .accent {
-    color: var(--primary);
-  }
-  .subtitle {
-    color: var(--text-muted);
-    font-size: 1.05rem;
-    max-width: 580px;
-  }
-  .features {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 1rem;
-    margin-bottom: 2rem;
-  }
-  .feature-card {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    color: var(--text);
-    transition:
-      border-color 0.15s,
-      transform 0.15s;
-  }
-  .feature-card:hover {
-    border-color: var(--primary);
-    transform: translateY(-2px);
-  }
-  .feat-icon {
-    color: var(--color-cobalt);
-    display: flex;
-    align-items: center;
-  }
-  .feature-card h3 {
-    margin: 0;
-    font-size: 1rem;
-  }
-  .feature-card p {
-    color: var(--text-muted);
-    font-size: 0.85rem;
-    flex: 1;
-    margin: 0;
-  }
-  .go-btn {
-    color: var(--primary);
-    font-size: 0.85rem;
-    font-weight: 600;
-  }
-</style>

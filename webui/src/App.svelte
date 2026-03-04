@@ -29,24 +29,10 @@
 </script>
 
 <NavBar {currentPath} />
-<main>
+<main class="flex-1 overflow-y-auto min-h-screen">
   <Router {routes} />
 </main>
 
-<div class="help-fixed">
+<div class="fixed top-4 right-5 z-[100]">
   <HowItWorks />
 </div>
-
-<style>
-  main {
-    flex: 1;
-    overflow-y: auto;
-    min-height: 100vh;
-  }
-  .help-fixed {
-    position: fixed;
-    top: 1rem;
-    right: 1.25rem;
-    z-index: 100;
-  }
-</style>

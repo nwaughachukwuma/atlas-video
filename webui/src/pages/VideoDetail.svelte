@@ -76,8 +76,8 @@
   }
 </script>
 
-<div class="page">
-  <div class="breadcrumb">
+<div class="p-8 max-w-[860px]">
+  <div class="mb-4 text-[0.85rem]">
     <a href="#/videos">← All Videos</a>
   </div>
   <h2>
@@ -87,27 +87,35 @@
       style="display:inline;vertical-align:middle;"
     /> Video Detail
   </h2>
-  <code class="vid-id">{videoId}</code>
+  <code
+    class="block text-[0.8rem] bg-surface-alt px-[0.5em] py-[0.25em] font-mono mt-1 mb-5 w-fit"
+    >{videoId}</code
+  >
 
   {#if loading}
-    <div class="loading-state card">
+    <div class="card text-center py-8">
       <span class="spinner"></span>
-      <p>Loading video data…</p>
+      <p class="mt-2 mb-0">Loading video data…</p>
     </div>
   {:else if error}
     <div class="error-box">{error}</div>
   {:else if !videoData}
-    <div class="pending-state card">
+    <div class="card text-center py-8">
       <span class="spinner"></span>
-      <p>Video is still being indexed… Checking every 4 seconds.</p>
-      <p class="muted">This page will update automatically when ready.</p>
+      <p class="mt-2 mb-0">
+        Video is still being indexed… Checking every 4 seconds.
+      </p>
+      <p class="text-muted text-[0.85rem] !mb-0">
+        This page will update automatically when ready.
+      </p>
     </div>
   {:else}
-    <div class="search-bar">
+    <div class="flex gap-2 mb-5">
       <input
         type="search"
         bind:value={searchQuery}
         placeholder="Search within this video…"
+        class="flex-1"
         on:keydown={(e) => e.key === "Enter" && doSearch()}
       />
       <button
@@ -124,39 +132,50 @@
 
     {#if searchResults !== null}
       <section class="card">
-        <h3>
-          Search results <span class="muted">({searchResults.length})</span>
+        <h3 class="mb-3">
+          Search results <span class="text-muted text-[0.85rem]"
+            >({searchResults.length})</span
+          >
         </h3>
         {#if searchResults.length === 0}
-          <p class="muted">No results.</p>
+          <p class="text-muted text-[0.85rem]">No results.</p>
         {:else}
           {#each searchResults as r}
-            <div class="result-item">
-              <span class="score">score: {r.score?.toFixed(3) ?? "—"}</span>
-              {#if r.description}<p class="desc-text">{r.description}</p>{/if}
-              {#if r.transcript}<p class="muted">{r.transcript}</p>{/if}
+            <div class="border-b border-line py-3 last:border-b-0">
+              <span class="text-[0.75rem] text-muted"
+                >score: {r.score?.toFixed(3) ?? "—"}</span
+              >
+              {#if r.description}<p class="text-[0.88rem] mt-1 mb-0">
+                  {r.description}
+                </p>{/if}
+              {#if r.transcript}<p class="text-[0.85rem] text-muted mb-0">
+                  {r.transcript}
+                </p>{/if}
             </div>
           {/each}
         {/if}
       </section>
     {:else}
-      <div class="meta-card card">
-        <h3>Video Info</h3>
-        <div class="meta-grid">
+      <div class="card mb-4">
+        <h3 class="mb-3">Video Info</h3>
+        <div class="flex flex-col gap-[0.4rem]">
           {#each Object.entries(videoData) as [k, v]}
             {#if typeof v !== "object" || v === null}
-              <div class="meta-row">
-                <span class="key">{k}</span>
-                <span class="val">{v ?? "—"}</span>
+              <div class="flex gap-4 text-[0.88rem]">
+                <span class="text-muted min-w-[130px]">{k}</span>
+                <span class="text-ink">{v ?? "—"}</span>
               </div>
             {/if}
           {/each}
         </div>
         {#if videoData.chunks}
-          <h4 style="margin-top:1rem">Segments ({videoData.chunks.length})</h4>
+          <h4 class="mt-4">Segments ({videoData.chunks.length})</h4>
           {#each videoData.chunks as chunk, i}
-            <details>
-              <summary>Segment {i + 1}</summary>
+            <details class="border border-line mb-[0.4rem] p-[0.4rem]">
+              <summary
+                class="cursor-pointer text-[0.85rem] text-muted hover:text-cobalt"
+                >Segment {i + 1}</summary
+              >
               <pre>{JSON.stringify(chunk, null, 2)}</pre>
             </details>
           {/each}
@@ -164,7 +183,10 @@
       </div>
     {/if}
 
-    <button class="btn-primary chat-btn" on:click={() => (chatOpen = true)}>
+    <button
+      class="btn-primary mt-6 text-base px-[1.6em] py-[0.6em]"
+      on:click={() => (chatOpen = true)}
+    >
       <MessageSquareIcon
         size={16}
         strokeWidth={2}
@@ -177,101 +199,3 @@
 {#if chatOpen}
   <ChatPanel {videoId} on:close={() => (chatOpen = false)} />
 {/if}
-
-<style>
-  .page {
-    padding: 2rem;
-    max-width: 860px;
-  }
-  .breadcrumb {
-    margin-bottom: 1rem;
-    font-size: 0.85rem;
-  }
-  .vid-id {
-    display: block;
-    font-size: 0.8rem;
-    background: var(--bg3);
-    padding: 0.25em 0.5em;
-    border-radius: 4px;
-    margin: 0.25rem 0 1.25rem;
-    width: fit-content;
-  }
-  .muted {
-    color: var(--text-muted);
-    font-size: 0.85rem;
-  }
-  .loading-state,
-  .pending-state {
-    text-align: center;
-    padding: 2rem;
-  }
-  .loading-state p,
-  .pending-state p {
-    margin: 0.5rem 0;
-  }
-  .search-bar {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1.25rem;
-  }
-  .search-bar input {
-    flex: 1;
-  }
-  .meta-card h3 {
-    margin-bottom: 0.75rem;
-  }
-  .meta-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-  }
-  .meta-row {
-    display: flex;
-    gap: 1rem;
-    font-size: 0.88rem;
-  }
-  .key {
-    color: var(--text-muted);
-    min-width: 130px;
-  }
-  .val {
-    color: var(--text);
-  }
-  details {
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    margin-bottom: 0.4rem;
-    padding: 0.4rem;
-  }
-  summary {
-    cursor: pointer;
-    font-size: 0.85rem;
-    color: var(--text-muted);
-  }
-  summary:hover {
-    color: var(--primary);
-  }
-  .result-item {
-    border-bottom: 1px solid var(--border);
-    padding: 0.75rem 0;
-  }
-  .result-item:last-child {
-    border: none;
-  }
-  .score {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-  }
-  .desc-text {
-    font-size: 0.88rem;
-    margin: 0.25rem 0 0;
-  }
-  h3 {
-    margin-bottom: 0.75rem;
-  }
-  .chat-btn {
-    margin-top: 1.5rem;
-    font-size: 1rem;
-    padding: 0.6em 1.6em;
-  }
-</style>

@@ -48,10 +48,12 @@
   }
 </script>
 
-<div class="page">
-  <div class="page-header">
-    <h2>Dashboard</h2>
-    <p class="desc">System health, usage metrics, and storage overview.</p>
+<div class="p-8 max-w-[900px]">
+  <div class="mb-6">
+    <h2 class="text-[1.5rem] mb-1">Dashboard</h2>
+    <p class="text-muted text-[0.9rem] !mb-0">
+      System health, usage metrics, and storage overview.
+    </p>
   </div>
 
   {#if loading}
@@ -60,52 +62,82 @@
     <div class="error-box">{error}</div>
   {:else}
     <!-- KPI row -->
-    <div class="kpi-grid">
-      <div class="card kpi">
-        <span class="kpi-label">Status</span>
+    <div class="grid grid-cols-4 gap-3 mb-4 max-sm:grid-cols-2">
+      <div class="card flex flex-col gap-[0.35rem] px-5 py-4">
         <span
-          class="kpi-value"
-          class:online={healthData?.status === "ok"}
-          class:offline={healthData?.status !== "ok"}
+          class="text-[0.72rem] text-muted uppercase tracking-[0.06em] font-semibold"
+          >Status</span
+        >
+        <span
+          class={`text-[1.5rem] font-bold leading-none ${healthData?.status === "ok" ? "text-success" : "text-danger"}`}
         >
           {healthData?.status === "ok" ? "Online" : "Offline"}
         </span>
       </div>
-      <div class="card kpi">
-        <span class="kpi-label">Videos</span>
-        <span class="kpi-value num">{videoCount}</span>
+      <div class="card flex flex-col gap-[0.35rem] px-5 py-4">
+        <span
+          class="text-[0.72rem] text-muted uppercase tracking-[0.06em] font-semibold"
+          >Videos</span
+        >
+        <span class="text-[1.5rem] font-bold leading-none text-cobalt font-mono"
+          >{videoCount}</span
+        >
       </div>
-      <div class="card kpi">
-        <span class="kpi-label">Total Tasks</span>
-        <span class="kpi-value num">{totalTasks}</span>
+      <div class="card flex flex-col gap-[0.35rem] px-5 py-4">
+        <span
+          class="text-[0.72rem] text-muted uppercase tracking-[0.06em] font-semibold"
+          >Total Tasks</span
+        >
+        <span class="text-[1.5rem] font-bold leading-none text-cobalt font-mono"
+          >{totalTasks}</span
+        >
       </div>
-      <div class="card kpi">
-        <span class="kpi-label">Active</span>
-        <span class="kpi-value num accent"
+      <div class="card flex flex-col gap-[0.35rem] px-5 py-4">
+        <span
+          class="text-[0.72rem] text-muted uppercase tracking-[0.06em] font-semibold"
+          >Active</span
+        >
+        <span
+          class="text-[1.5rem] font-bold leading-none text-warning font-mono"
           >{(queueBreakdown.pending ?? 0) + (queueBreakdown.running ?? 0)}</span
         >
       </div>
     </div>
 
     <!-- Queue breakdown -->
-    <div class="card section">
-      <h3>Queue by Status</h3>
+    <div class="card mb-4">
+      <h3 class="text-[0.85rem] uppercase tracking-[0.05em] text-muted mb-3">
+        Queue by Status
+      </h3>
       {#if totalTasks === 0}
-        <p class="muted">No tasks in queue.</p>
+        <p class="text-muted text-[0.85rem]">No tasks in queue.</p>
       {:else}
-        <div class="queue-bars">
+        <div class="flex flex-col gap-2">
           {#each [["pending", "Pending"], ["running", "Running"], ["completed", "Completed"], ["failed", "Failed"], ["timeout", "Timeout"]] as [key, label]}
             {@const count = queueBreakdown[key] ?? 0}
             {#if count > 0}
-              <div class="bar-row">
+              <div class="flex items-center gap-3">
                 <span class={badgeClass(key)}>{label}</span>
-                <div class="bar-track">
+                <div class="flex-1 h-[6px] bg-surface-alt overflow-hidden">
                   <div
-                    class="bar-fill bar-{key}"
+                    class={`h-full transition-[width] duration-300 ${
+                      key === "pending"
+                        ? "bg-[#6b7280]"
+                        : key === "running"
+                          ? "bg-cobalt"
+                          : key === "completed"
+                            ? "bg-success"
+                            : key === "failed"
+                              ? "bg-danger"
+                              : "bg-warning"
+                    }`}
                     style="width:{Math.max((count / totalTasks) * 100, 4)}%"
                   ></div>
                 </div>
-                <span class="bar-count">{count}</span>
+                <span
+                  class="text-[0.8rem] font-mono text-muted min-w-[2ch] text-right"
+                  >{count}</span
+                >
               </div>
             {/if}
           {/each}
@@ -115,16 +147,26 @@
 
     <!-- Videos list preview -->
     {#if videosData?.videos?.length}
-      <div class="card section">
-        <div class="section-header">
-          <h3>Indexed Videos</h3>
-          <a href="#/videos" class="link-sm">View all →</a>
+      <div class="card mb-4">
+        <div class="flex justify-between items-center mb-3">
+          <h3
+            class="text-[0.85rem] uppercase tracking-[0.05em] text-muted !mb-0"
+          >
+            Indexed Videos
+          </h3>
+          <a href="#/videos" class="text-[0.8rem] font-semibold">View all →</a>
         </div>
-        <div class="video-list">
+        <div class="flex flex-col">
           {#each videosData.videos.slice(0, 8) as v}
-            <a href={`#/videos/${v.video_id}`} class="video-row">
-              <code class="vid-id">{v.video_id}</code>
-              <span class="vid-date muted"
+            <a
+              href={`#/videos/${v.video_id}`}
+              class="flex justify-between items-center py-[0.45rem] border-b border-line text-ink text-[0.85rem] hover:text-cobalt last:border-b-0"
+            >
+              <code
+                class="text-[0.8rem] bg-surface-alt px-[0.4em] py-[0.1em] font-mono break-all"
+                >{v.video_id}</code
+              >
+              <span class="text-muted text-[0.78rem]"
                 >{v.indexed_at
                   ? new Date(v.indexed_at).toLocaleDateString()
                   : "—"}</span
@@ -132,7 +174,7 @@
             </a>
           {/each}
           {#if videosData.videos.length > 8}
-            <p class="muted" style="margin:0.5rem 0 0;font-size:0.8rem;">
+            <p class="text-muted mt-2 !mb-0 text-[0.8rem]">
               +{videosData.videos.length - 8} more
             </p>
           {/if}
@@ -141,247 +183,53 @@
     {/if}
 
     <!-- Storage & Index details -->
-    <div class="card section">
-      <h3>Storage</h3>
-      <div class="meta-grid">
-        <div class="meta-row">
-          <span class="key">Video index</span>
-          <code>{statsData?.video_col_path ?? "—"}</code>
+    <div class="card mb-4">
+      <h3 class="text-[0.85rem] uppercase tracking-[0.05em] text-muted mb-3">
+        Storage
+      </h3>
+      <div class="flex flex-col gap-2">
+        <div class="flex gap-4 text-[0.85rem] items-start">
+          <span class="text-muted min-w-[100px] shrink-0">Video index</span>
+          <code
+            class="text-[0.78rem] font-mono bg-surface-alt px-[0.4em] py-[0.15em] break-all"
+            >{statsData?.video_col_path ?? "—"}</code
+          >
         </div>
-        <div class="meta-row">
-          <span class="key">Chat store</span>
-          <code>{statsData?.chat_col_path ?? "—"}</code>
+        <div class="flex gap-4 text-[0.85rem] items-start">
+          <span class="text-muted min-w-[100px] shrink-0">Chat store</span>
+          <code
+            class="text-[0.78rem] font-mono bg-surface-alt px-[0.4em] py-[0.15em] break-all"
+            >{statsData?.chat_col_path ?? "—"}</code
+          >
         </div>
       </div>
     </div>
 
-    <div class="two-col">
-      <div class="card section">
-        <h3>Index Stats</h3>
+    <div class="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
+      <div class="card">
+        <h3 class="text-[0.85rem] uppercase tracking-[0.05em] text-muted mb-3">
+          Index Stats
+        </h3>
         {#if statsData?.video_index_stats}
-          <pre>{statsData.video_index_stats}</pre>
+          <pre class="!m-0 text-[0.75rem]">{statsData.video_index_stats}</pre>
         {:else}
-          <p class="muted">No index stats available.</p>
+          <p class="text-muted text-[0.85rem] !mb-0">
+            No index stats available.
+          </p>
         {/if}
       </div>
-      <div class="card section">
-        <h3>Chat Stats</h3>
+      <div class="card">
+        <h3 class="text-[0.85rem] uppercase tracking-[0.05em] text-muted mb-3">
+          Chat Stats
+        </h3>
         {#if statsData?.chat_index_stats}
-          <pre>{statsData.chat_index_stats}</pre>
+          <pre class="!m-0 text-[0.75rem]">{statsData.chat_index_stats}</pre>
         {:else}
-          <p class="muted">No chat stats available.</p>
+          <p class="text-muted text-[0.85rem] !mb-0">
+            No chat stats available.
+          </p>
         {/if}
       </div>
     </div>
   {/if}
 </div>
-
-<style>
-  .page {
-    padding: 2rem;
-    max-width: 900px;
-  }
-  .page-header {
-    margin-bottom: 1.5rem;
-  }
-  .page-header h2 {
-    font-size: 1.5rem;
-    margin-bottom: 0.25rem;
-  }
-  .desc {
-    color: var(--text-muted);
-    margin: 0;
-    font-size: 0.9rem;
-  }
-  .muted {
-    color: var(--text-muted);
-    font-size: 0.85rem;
-  }
-
-  /* KPI grid */
-  .kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-  }
-  .kpi {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-    padding: 1rem 1.25rem;
-  }
-  .kpi-label {
-    font-size: 0.72rem;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-weight: 600;
-  }
-  .kpi-value {
-    font-size: 1.5rem;
-    font-weight: 700;
-    line-height: 1;
-  }
-  .kpi-value.num {
-    color: var(--primary);
-    font-family: var(--font-mono);
-  }
-  .kpi-value.accent {
-    color: var(--warning);
-  }
-  .kpi-value.online {
-    color: var(--success);
-  }
-  .kpi-value.offline {
-    color: var(--danger);
-  }
-
-  /* Sections */
-  .section {
-    margin-bottom: 1rem;
-  }
-  .section h3 {
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-muted);
-    margin-bottom: 0.75rem;
-  }
-  .section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.75rem;
-  }
-  .section-header h3 {
-    margin-bottom: 0;
-  }
-  .link-sm {
-    font-size: 0.8rem;
-    font-weight: 600;
-  }
-
-  /* Queue breakdown bars */
-  .queue-bars {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  .bar-row {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-  .bar-track {
-    flex: 1;
-    height: 6px;
-    background: var(--bg3);
-    border-radius: 1px;
-    overflow: hidden;
-  }
-  .bar-fill {
-    height: 100%;
-    border-radius: 1px;
-    transition: width 0.3s;
-  }
-  .bar-pending {
-    background: #6b7280;
-  }
-  .bar-running {
-    background: var(--info);
-  }
-  .bar-completed {
-    background: var(--success);
-  }
-  .bar-failed {
-    background: var(--danger);
-  }
-  .bar-timeout {
-    background: var(--warning);
-  }
-  .bar-count {
-    font-size: 0.8rem;
-    font-family: var(--font-mono);
-    color: var(--text-muted);
-    min-width: 2ch;
-    text-align: right;
-  }
-
-  /* Video list */
-  .video-list {
-    display: flex;
-    flex-direction: column;
-  }
-  .video-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.45rem 0;
-    border-bottom: 1px solid var(--border);
-    color: var(--text);
-    font-size: 0.85rem;
-  }
-  .video-row:last-child {
-    border-bottom: none;
-  }
-  .video-row:hover {
-    color: var(--primary);
-  }
-  .vid-id {
-    font-size: 0.8rem;
-    background: var(--bg3);
-    padding: 0.1em 0.4em;
-    border-radius: var(--radius);
-    word-break: break-all;
-  }
-  .vid-date {
-    font-size: 0.78rem;
-  }
-
-  /* Storage */
-  .meta-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  .meta-row {
-    display: flex;
-    gap: 1rem;
-    font-size: 0.85rem;
-    align-items: flex-start;
-  }
-  .key {
-    color: var(--text-muted);
-    min-width: 100px;
-    flex-shrink: 0;
-  }
-  code {
-    font-size: 0.78rem;
-    font-family: var(--font-mono);
-    background: var(--bg3);
-    padding: 0.15em 0.4em;
-    border-radius: var(--radius);
-    word-break: break-all;
-  }
-
-  /* Two-col stats */
-  .two-col {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
-  }
-  .two-col pre {
-    font-size: 0.75rem;
-    margin: 0;
-  }
-
-  @media (max-width: 700px) {
-    .kpi-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-    .two-col {
-      grid-template-columns: 1fr;
-    }
-  }
-</style>

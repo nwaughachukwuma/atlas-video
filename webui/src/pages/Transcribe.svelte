@@ -40,7 +40,7 @@
   }
 </script>
 
-<div class="page">
+<div class="p-8 max-w-[760px]">
   <h2>
     <MicIcon
       size={20}
@@ -48,12 +48,12 @@
       style="display:inline;vertical-align:middle;"
     /> Transcribe Video
   </h2>
-  <p class="desc">
+  <p class="text-muted mb-5">
     Convert your video's audio to text. Supports plain text, WebVTT, and SRT
     formats.
   </p>
 
-  <div class="card">
+  <div class="card mb-4">
     <VideoUpload
       bind:file
       on:change={() => {
@@ -63,32 +63,36 @@
     />
   </div>
 
-  <div class="card options">
-    <h3>Options</h3>
-    <div class="row">
-      <div class="form-group">
+  <div class="card mb-4">
+    <h3 class="mb-3">Options</h3>
+    <div class="flex gap-4 flex-wrap">
+      <div class="mb-4">
         <label for="fmt">Output format</label>
-        <select id="fmt" bind:value={format}>
+        <select id="fmt" bind:value={format} class="w-40">
           <option value="text">Plain text</option>
           <option value="vtt">WebVTT</option>
           <option value="srt">SRT</option>
         </select>
       </div>
     </div>
-    <div class="toggles">
-      <label class="toggle">
-        <input type="checkbox" bind:checked={benchmark} />
+    <div class="flex flex-col gap-2 mt-3">
+      <label
+        class="flex items-center gap-2 cursor-pointer text-[0.88rem] !text-ink !mb-0"
+      >
+        <input type="checkbox" bind:checked={benchmark} class="accent-cobalt" />
         <span>Benchmark timing</span>
       </label>
-      <label class="toggle">
-        <input type="checkbox" bind:checked={no_queue} />
+      <label
+        class="flex items-center gap-2 cursor-pointer text-[0.88rem] !text-ink !mb-0"
+      >
+        <input type="checkbox" bind:checked={no_queue} class="accent-cobalt" />
         <span>Run immediately (no queue)</span>
       </label>
     </div>
   </div>
 
   <button
-    class="btn-primary submit"
+    class="btn-primary mb-3 text-base px-[1.6em] py-[0.6em]"
     on:click={submit}
     disabled={!file || loading}
   >
@@ -112,8 +116,8 @@
   {/if}
 
   {#if result}
-    <div class="result card">
-      <h3>Transcript <span class="tag">{format}</span></h3>
+    <div class="card mt-2">
+      <h3 class="mb-3">Transcript <span class="tag">{format}</span></h3>
       {#if result.transcript}
         <pre>{result.transcript}</pre>
       {:else}
@@ -122,47 +126,3 @@
     </div>
   {/if}
 </div>
-
-<style>
-  .page {
-    padding: 2rem;
-    max-width: 760px;
-  }
-  .desc {
-    color: var(--text-muted);
-    margin-bottom: 1.25rem;
-  }
-  .options h3 {
-    margin-bottom: 0.75rem;
-  }
-  .toggles {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-top: 0.75rem;
-  }
-  .toggle {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-    font-size: 0.88rem;
-  }
-  .toggle input {
-    accent-color: var(--primary);
-  }
-  .card {
-    margin-bottom: 1rem;
-  }
-  .submit {
-    margin-bottom: 0.75rem;
-    font-size: 1rem;
-    padding: 0.6em 1.6em;
-  }
-  .result h3 {
-    margin-bottom: 0.75rem;
-  }
-  select {
-    width: 160px;
-  }
-</style>

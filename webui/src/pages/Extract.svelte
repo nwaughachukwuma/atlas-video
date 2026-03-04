@@ -49,7 +49,7 @@
   }
 </script>
 
-<div class="page">
+<div class="p-8 max-w-[760px]">
   <h2>
     <FlaskConicalIcon
       size={20}
@@ -57,12 +57,12 @@
       style="display:inline;vertical-align:middle;"
     /> Extract Video Insights
   </h2>
-  <p class="desc">
+  <p class="text-muted mb-5">
     Derive rich multimodal understanding — scene descriptions, visual context,
     and summaries.
   </p>
 
-  <div class="card">
+  <div class="card mb-4">
     <VideoUpload
       bind:file
       on:change={() => {
@@ -72,10 +72,10 @@
     />
   </div>
 
-  <div class="card options">
-    <h3>Options</h3>
-    <div class="row">
-      <div class="form-group">
+  <div class="card mb-4">
+    <h3 class="mb-3">Options</h3>
+    <div class="flex gap-4 flex-wrap">
+      <div class="mb-4">
         <label for="cd">Chunk duration</label>
         <input
           id="cd"
@@ -84,36 +84,46 @@
           style="width:90px"
         />
       </div>
-      <div class="form-group">
+      <div class="mb-4">
         <label for="ov">Overlap</label>
         <input id="ov" type="text" bind:value={overlap} style="width:90px" />
       </div>
-      <div class="form-group">
+      <div class="mb-4">
         <label for="fmt">Format</label>
-        <select id="fmt" bind:value={format}>
+        <select id="fmt" bind:value={format} class="w-[100px]">
           <option value="json">JSON</option>
           <option value="text">Text</option>
         </select>
       </div>
     </div>
-    <div class="toggles">
-      <label class="toggle">
-        <input type="checkbox" bind:checked={include_summary} />
+    <div class="flex flex-col gap-2 mt-3">
+      <label
+        class="flex items-center gap-2 cursor-pointer text-[0.88rem] !text-ink !mb-0"
+      >
+        <input
+          type="checkbox"
+          bind:checked={include_summary}
+          class="accent-cobalt"
+        />
         <span>Include summary</span>
       </label>
-      <label class="toggle">
-        <input type="checkbox" bind:checked={benchmark} />
+      <label
+        class="flex items-center gap-2 cursor-pointer text-[0.88rem] !text-ink !mb-0"
+      >
+        <input type="checkbox" bind:checked={benchmark} class="accent-cobalt" />
         <span>Benchmark timing</span>
       </label>
-      <label class="toggle">
-        <input type="checkbox" bind:checked={no_queue} />
+      <label
+        class="flex items-center gap-2 cursor-pointer text-[0.88rem] !text-ink !mb-0"
+      >
+        <input type="checkbox" bind:checked={no_queue} class="accent-cobalt" />
         <span>Run immediately (no queue)</span>
       </label>
     </div>
   </div>
 
   <button
-    class="btn-primary submit"
+    class="btn-primary mb-3 text-base px-[1.6em] py-[0.6em]"
     on:click={submit}
     disabled={!file || loading}
   >
@@ -136,13 +146,16 @@
   {/if}
 
   {#if result}
-    <div class="result card">
+    <div class="card mt-2">
       <h3>Extracted Insights</h3>
       {#if result.chunks}
-        <p class="muted">{result.chunks.length} segments extracted</p>
+        <p class="text-muted text-[0.85rem]">
+          {result.chunks.length} segments extracted
+        </p>
         {#each result.chunks as chunk, i}
-          <details>
+          <details class="border border-line mb-2 p-2">
             <summary
+              class="cursor-pointer text-[0.88rem] text-muted hover:text-cobalt"
               >Segment {i + 1} — {chunk.start_time ?? ""}s – {chunk.end_time ??
                 ""}s</summary
             >
@@ -150,8 +163,8 @@
           </details>
         {/each}
         {#if result.summary}
-          <div class="summary">
-            <h4>Summary</h4>
+          <div class="mt-4 pt-4 border-t border-line">
+            <h4 class="mb-[0.4rem]">Summary</h4>
             <p>{result.summary}</p>
           </div>
         {/if}
@@ -161,70 +174,3 @@
     </div>
   {/if}
 </div>
-
-<style>
-  .page {
-    padding: 2rem;
-    max-width: 760px;
-  }
-  .desc {
-    color: var(--text-muted);
-    margin-bottom: 1.25rem;
-  }
-  .muted {
-    color: var(--text-muted);
-    font-size: 0.85rem;
-  }
-  .options h3 {
-    margin-bottom: 0.75rem;
-  }
-  .toggles {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-top: 0.75rem;
-  }
-  .toggle {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-    font-size: 0.88rem;
-  }
-  .toggle input {
-    accent-color: var(--primary);
-  }
-  .card {
-    margin-bottom: 1rem;
-  }
-  .submit {
-    margin-bottom: 0.75rem;
-    font-size: 1rem;
-    padding: 0.6em 1.6em;
-  }
-  details {
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    margin-bottom: 0.5rem;
-    padding: 0.5rem;
-  }
-  summary {
-    cursor: pointer;
-    font-size: 0.88rem;
-    color: var(--text-muted);
-  }
-  summary:hover {
-    color: var(--primary);
-  }
-  .summary {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border);
-  }
-  .summary h4 {
-    margin-bottom: 0.4rem;
-  }
-  select {
-    width: 100px;
-  }
-</style>

@@ -40,9 +40,13 @@
 </script>
 
 <div
-  class="dropzone"
-  class:dragging
-  class:has-file={!!file}
+  class={`border-2 border-dashed p-8 text-center transition-all duration-[0.15s] bg-surface-alt cursor-pointer ${
+    dragging
+      ? "border-cobalt bg-[rgba(19,81,170,0.07)]"
+      : file
+        ? "border-solid border-success p-4"
+        : "border-line"
+  }`}
   on:dragover|preventDefault={() => (dragging = true)}
   on:dragleave={() => (dragging = false)}
   on:drop={handleDrop}
@@ -50,26 +54,34 @@
   aria-label="Video file upload"
 >
   {#if file}
-    <div class="file-info">
-      <span class="icon"><FilmIcon size={20} strokeWidth={1.5} /></span>
-      <div class="meta">
-        <span class="name">{file.name}</span>
-        <span class="size">{formatSize(file.size)}</span>
+    <div class="flex items-center gap-3 text-left">
+      <span class="text-cobalt flex"
+        ><FilmIcon size={20} strokeWidth={1.5} /></span
+      >
+      <div class="flex-1">
+        <span class="block text-[0.9rem] font-medium">{file.name}</span>
+        <span class="block text-[0.78rem] text-muted"
+          >{formatSize(file.size)}</span
+        >
       </div>
       <button
         type="button"
-        class="btn-remove"
+        class="bg-transparent border-none text-muted p-1 leading-none hover:text-danger"
         on:click={clear}
         title="Remove file"><XIcon size={16} strokeWidth={2} /></button
       >
     </div>
   {:else}
-    <div class="prompt">
-      <span class="icon"><UploadIcon size={28} strokeWidth={1.5} /></span>
-      <p>Drag &amp; drop a video file here</p>
-      <span class="or">or</span>
+    <div>
+      <span class="text-cobalt flex justify-center mb-2"
+        ><UploadIcon size={28} strokeWidth={1.5} /></span
+      >
+      <p class="text-muted my-1 mb-3 text-[0.9rem]">
+        Drag &amp; drop a video file here
+      </p>
+      <span class="text-muted text-[0.8rem] block mb-2">or</span>
       <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-      <label class="btn-secondary" style="cursor:pointer;">
+      <label class="btn-secondary cursor-pointer">
         Browse files
         <input
           bind:this={input}
@@ -82,74 +94,3 @@
     </div>
   {/if}
 </div>
-
-<style>
-  .dropzone {
-    border: 2px dashed var(--border);
-    border-radius: var(--radius);
-    padding: 2rem;
-    text-align: center;
-    transition: all 0.15s;
-    background: var(--bg3);
-    cursor: pointer;
-  }
-  .dropzone.dragging {
-    border-color: var(--primary);
-    background: rgba(99, 102, 241, 0.07);
-  }
-  .dropzone.has-file {
-    border-style: solid;
-    border-color: var(--success);
-    padding: 1rem;
-  }
-  .prompt .icon {
-    color: var(--color-cobalt);
-    display: flex;
-    justify-content: center;
-    margin-bottom: 0.5rem;
-  }
-  .prompt p {
-    color: var(--text-muted);
-    margin: 0.25rem 0 0.75rem;
-    font-size: 0.9rem;
-  }
-  .or {
-    color: var(--text-muted);
-    font-size: 0.8rem;
-    display: block;
-    margin-bottom: 0.5rem;
-  }
-  .file-info {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    text-align: left;
-  }
-  .file-info .icon {
-    font-size: 1.5rem;
-  }
-  .meta {
-    flex: 1;
-  }
-  .name {
-    display: block;
-    font-size: 0.9rem;
-    font-weight: 500;
-  }
-  .size {
-    display: block;
-    font-size: 0.78rem;
-    color: var(--text-muted);
-  }
-  .btn-remove {
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    font-size: 1rem;
-    padding: 0.25rem;
-    line-height: 1;
-  }
-  .btn-remove:hover {
-    color: var(--danger);
-  }
-</style>

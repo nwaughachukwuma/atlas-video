@@ -58,111 +58,46 @@
   }
 </script>
 
-<nav>
-  <div class="logo">
-    <a href="#/">
+<nav
+  class="w-[210px] min-h-screen bg-surface border-r border-line flex flex-col py-5 sticky top-0 shrink-0"
+>
+  <div class="px-[1.1rem] pb-5 border-b border-line mb-3">
+    <a
+      href="#/"
+      class="font-sans text-[1.15rem] font-black text-cobalt flex items-center gap-[0.35rem] tracking-[-0.02em]"
+    >
       <ZapIcon size={16} strokeWidth={2} />
       <span>Atlas</span>
     </a>
-    <span class="version">Multimodal AI</span>
+    <span class="text-[0.7rem] font-bold text-muted uppercase tracking-[0.2em]"
+      >Multimodal AI</span
+    >
   </div>
-  <ul>
+  <ul class="list-none m-0 p-0 flex-1">
     {#each links as l}
-      <li class:active={isActive(l.path)}>
-        <a href={`#${l.path}`}>
+      <li>
+        <a
+          href={`#${l.path}`}
+          class={`flex items-center gap-2 py-[0.55em] px-[1.1rem] text-[0.88rem] font-medium border-l-2 transition-all duration-300 ease-linear ${
+            isActive(l.path)
+              ? "text-cobalt border-l-cobalt bg-[rgba(19,81,170,0.06)] font-bold"
+              : "text-muted border-l-transparent hover:text-ink hover:bg-surface-alt"
+          }`}
+        >
           <svelte:component this={l.icon} size={15} strokeWidth={1.5} />
           <span>{l.label}</span>
         </a>
       </li>
     {/each}
   </ul>
-  <div class="nav-footer">
-    <span class="muted">Atlas Multimodal Engine</span>
+  <div
+    class="px-[1.1rem] pt-4 border-t border-line text-[0.75rem] flex flex-col gap-[0.3em]"
+  >
+    <span class="text-muted">Atlas Multimodal Engine</span>
     <a
       href="https://github.com/nwaughachukwuma/atlas-video"
       target="_blank"
-      class="gh-link">GitHub ↗</a
+      class="text-muted hover:text-cobalt">GitHub ↗</a
     >
   </div>
 </nav>
-
-<style>
-  nav {
-    width: 210px;
-    min-height: 100vh;
-    background: var(--color-surface);
-    border-right: 1px solid var(--color-line);
-    display: flex;
-    flex-direction: column;
-    padding: 1.25rem 0;
-    position: sticky;
-    top: 0;
-    flex-shrink: 0;
-  }
-  .logo {
-    padding: 0 1.1rem 1.25rem;
-    border-bottom: 1px solid var(--color-line);
-    margin-bottom: 0.75rem;
-  }
-  .logo a {
-    font-family: var(--font-display);
-    font-size: 1.15rem;
-    font-weight: 900;
-    color: var(--color-cobalt);
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    letter-spacing: -0.02em;
-  }
-  .version {
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: var(--color-text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.2em;
-  }
-  ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    flex: 1;
-  }
-  li a {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.55em 1.1rem;
-    color: var(--color-text-muted);
-    font-size: 0.88rem;
-    font-weight: 500;
-    border-left: 2px solid transparent;
-    transition: all 0.3s linear;
-  }
-  li a:hover {
-    color: var(--color-text);
-    background: var(--color-surface-alt);
-  }
-  li.active a {
-    color: var(--color-cobalt);
-    border-left-color: var(--color-cobalt);
-    background: rgba(19, 81, 170, 0.06);
-    font-weight: 700;
-  }
-  .nav-footer {
-    padding: 1rem 1.1rem 0;
-    border-top: 1px solid var(--color-line);
-    font-size: 0.75rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.3em;
-  }
-  .muted {
-    color: var(--color-text-muted);
-  }
-  .gh-link {
-    color: var(--color-text-muted);
-  }
-  .gh-link:hover {
-    color: var(--color-cobalt);
-  }
-</style>
