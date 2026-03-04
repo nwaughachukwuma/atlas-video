@@ -293,7 +293,7 @@ Options:
 atlas extract video.mp4
 
 # JSON output saved to file, custom chunks
-atlas extract video.mp4 --chunk-duration=10s --overlap=1s --format=json --output=insights.json
+atlas extract video.mp4 --chunk-duration=15s --overlap=1s --format=json --output=insights.json
 
 # Only extract visual and audio
 atlas extract video.mp4 --attrs visual_cues --attrs audio_analysis
@@ -324,7 +324,7 @@ Options:
 
 ```bash
 atlas index video.mp4
-atlas index video.mp4 --chunk-duration=10s --overlap=2s
+atlas index video.mp4 --chunk-duration=15s --overlap=1s
 ```
 
 ---

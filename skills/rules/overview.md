@@ -62,7 +62,7 @@ For a ~5-minute video with 15s chunks (~20 chunks), wall-clock time for `atlas i
 
 ```
 video.mp4
-   └─ ffmpeg splits into overlapping chunks (default: 15s, 1s overlap)
+   └─ ffmpeg splits into overlapping chunks (CLI default: 15s, 1s overlap; Python API default: 15s, 1s overlap)
        └─ Concurrently per chunk:
            ├─ Gemini multimodal: visual_cues, audio_analysis, interactions,
            │                     contextual_information, transcript, summary

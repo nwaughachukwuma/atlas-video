@@ -85,7 +85,16 @@ async def main():
 asyncio.run(main())
 ```
 
-`video_id` is a stable identifier derived from the video. Store it for later `search` and `chat` calls.
+`video_id` is a randomly generated identifier. Store it for later `search` and `chat` calls.
+
+The `on_segment` callback can be passed to receive each `VideoDescription` as it completes:
+
+```python
+video_id, count, result = await index_video(
+    "video.mp4",
+    on_segment=lambda desc: print(f"{desc.start:.0f}s–{desc.end:.0f}s indexed"),
+)
+```
 
 ---
 
@@ -116,40 +125,46 @@ asyncio.run(main())
 
 ## Chat with a video — `chat_with_video`
 
+`chat_with_video` is an **async generator** — it yields text chunks as they stream from Gemini.
+
 ```python
-from atlas.vector_store import chat_with_video
+from atlas.chat_handler import chat_with_video
 import asyncio
 
 async def main():
     video_id = "abc123def456"
-    answer = await chat_with_video(video_id, "What tools are shown in this video?")
-    print(answer)
+    answer = ""
+    async for chunk in chat_with_video(video_id, "What tools are shown in this video?"):
+        print(chunk, end="", flush=True)
+        answer += chunk
+    # use answer e.g., ingest to your DB, observability or validation pipeline
+    print()  # final newline
 
 asyncio.run(main())
 ```
 
 Context is assembled from:
 
-1. Top-k semantic hits from `video_index`
+1. Top-k semantic hits from `video_index` (`top_k_context`, default 10)
 2. Last 20 messages from chat history
-3. Top-k hits from prior chat turns (deduped)
+3. Top-k semantic hits from prior chat turns, deduped (`top_k_chat`, default 10)
 
 ---
 
-## Transcription — `extract_transcript`
+## Transcription — `get_video_transcript`
 
 ```python
-from atlas.video_processor import extract_transcript
+from atlas.transcript import get_video_transcript
 import asyncio
 
 # One-shot — returns the full transcript string
 async def one_shot():
-    transcript = await extract_transcript("video.mp4", format="srt")
+    transcript = await get_video_transcript("video.mp4", format="srt")
     print(transcript)
 
 # Streaming — callback called as each Groq chunk arrives
 async def streaming():
-    await extract_transcript(
+    await get_video_transcript(
         "video.mp4",
         format="text",
         on_chunk=lambda chunk: print(chunk, end="", flush=True),
@@ -178,7 +193,8 @@ Supported formats: `"text"`, `"vtt"`, `"srt"`.
 ```python
 import asyncio
 from atlas import VideoProcessor, VideoProcessorConfig
-from atlas.vector_store import index_video, search_video, chat_with_video
+from atlas.vector_store import index_video, search_video
+from atlas.chat_handler import chat_with_video
 
 VIDEO = "video.mp4"
 
@@ -199,9 +215,11 @@ async def main():
     for h in hits:
         print(f"  [{h.score:.3f}] {h.content[:80]}")
 
-    # 4. Chat
-    answer = await chat_with_video(video_id, "What is the video about?")
-    print(f"\nAnswer: {answer}")
+    # 4. Chat (streaming)
+    print("\nAnswer: ", end="")
+    async for chunk in chat_with_video(video_id, "What is the video about?"):
+        print(chunk, end="", flush=True)
+    print()
 
 asyncio.run(main())
 ```

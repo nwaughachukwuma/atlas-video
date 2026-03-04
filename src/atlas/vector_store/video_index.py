@@ -388,8 +388,8 @@ def default_video_index(embedding_dim: int = 768) -> VideoIndex:
 
 async def index_video(
     video_path: str,
-    chunk_duration=10,
-    overlap=0,
+    chunk_duration=15,
+    overlap=1,
     description_attrs: Optional[List[DescriptionAttr]] = None,
     include_summary=True,
     embedding_dim=768,

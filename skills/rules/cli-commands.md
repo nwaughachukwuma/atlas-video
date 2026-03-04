@@ -3,6 +3,16 @@
 All commands are invoked as `atlas <command> [args] [options]`.  
 Long-running commands (`extract`, `index`) are **queued by default**. Add `--no-queue` to any command to run it synchronously and stream output to the terminal.
 
+### Shared options
+
+The following flags are available on **all** commands (extract, index, search, transcribe, chat, list-videos, list-chat, stats):
+
+| Flag             | Description                                                         |
+| ---------------- | ------------------------------------------------------------------- |
+| `--benchmark`    | Print a per-function timing breakdown after the command completes   |
+| `--no-queue`     | Run immediately without queuing (default: queue the task)           |
+| `--no-streaming` | Disable streaming output (only applies to direct `--no-queue` runs) |
+
 ---
 
 ## `atlas extract`
@@ -21,6 +31,7 @@ Options:
       --include-summary BOOL   Per-segment summary          [default: true]
       --benchmark              Print timing breakdown at end
       --no-queue               Run directly, stream to terminal
+      --no-streaming           Disable streaming output (--no-queue only)
 ```
 
 **Available `--attrs` values:**
@@ -42,7 +53,7 @@ Options:
 atlas extract video.mp4 --no-queue
 
 # JSON output saved to file with custom chunk size
-atlas extract video.mp4 --chunk-duration=10s --overlap=1s --format=json --output=insights.json
+atlas extract video.mp4 --chunk-duration=15s --overlap=1s --format=json --output=insights.json
 
 # Only visual and audio attributes, skip summary, print timing
 atlas extract video.mp4 --attrs visual_cues --attrs audio_analysis \
@@ -68,13 +79,14 @@ Options:
       --include-summary BOOL   [default: true]
       --benchmark              Print timing breakdown
       --no-queue               Run directly
+      --no-streaming           Disable streaming output (--no-queue only)
 ```
 
 **Examples:**
 
 ```bash
 atlas index video.mp4
-atlas index video.mp4 --chunk-duration=10s --overlap=2s --benchmark
+atlas index video.mp4 --chunk-duration=15s --overlap=2s --benchmark
 atlas index video.mp4 --no-queue   # stream progress, print video_id when done
 ```
 

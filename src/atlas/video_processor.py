@@ -31,8 +31,8 @@ class VideoProcessorConfig(BaseModel):
     """Configuration for video processing"""
 
     video_path: str
-    chunk_duration: int = 10  # seconds
-    overlap: int = 0  # seconds
+    chunk_duration: int = 15  # seconds
+    overlap: int = 1  # seconds
     description_attrs: Optional[list[DescriptionAttr]] = None
     include_summary: bool = True
 

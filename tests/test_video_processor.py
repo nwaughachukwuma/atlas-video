@@ -22,8 +22,8 @@ class TestVideoProcessorConfig:
         """Test default config values"""
         config = VideoProcessorConfig(video_path="/tmp/video.mp4")
         assert config.video_path == "/tmp/video.mp4"
-        assert config.chunk_duration == 10
-        assert config.overlap == 0
+        assert config.chunk_duration == 15
+        assert config.overlap == 1
         assert config.description_attrs is None
         assert config.include_summary is True
 
@@ -102,8 +102,8 @@ class TestVideoProcessor:
             processor = VideoProcessor(config)
 
             assert processor.video_path == str(video_path)
-            assert processor.chunk_duration == 10
-            assert processor.overlap == 0
+            assert processor.chunk_duration == 15
+            assert processor.overlap == 1
 
     @pytest.mark.asyncio
     async def test_context_manager(self, tmp_path, monkeypatch):

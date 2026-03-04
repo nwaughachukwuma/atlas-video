@@ -2,6 +2,8 @@
 
 Start the server with `atlas serve` (see `rules/cli-commands.md`), then interact with these REST endpoints.
 
+> **Note:** The server defaults to running commands directly (`no_queue=true`), unlike the CLI which queues by default. The server also disables streaming by default (`no_streaming=true`).
+
 ```bash
 # Default: all interfaces, port 8000
 atlas serve
@@ -41,46 +43,75 @@ curl http://localhost:8000/health
 
 ## `POST /extract`
 
+Uses **multipart/form-data** file upload. The video is uploaded directly.
+
 ```bash
 curl -X POST http://localhost:8000/extract \
-  -H "Content-Type: application/json" \
-  -d '{
-    "video_path": "/data/video.mp4",
-    "chunk_duration": 15,
-    "overlap": 1,
-    "attrs": ["visual_cues", "audio_analysis"],
-    "include_summary": true,
-    "format": "json"
-  }'
+  -F "video=@video.mp4" \
+  -F "chunk_duration=15s" \
+  -F "overlap=1s" \
+  -F "attrs=visual_cues,audio_analysis" \
+  -F "include_summary=true" \
+  -F "format=json"
 ```
+
+| Field             | Type    | Default | Description                         |
+| ----------------- | ------- | ------- | ----------------------------------- |
+| `video`           | file    | —       | Video file to upload (required)     |
+| `chunk_duration`  | string  | `15s`   | Duration per chunk                  |
+| `overlap`         | string  | `1s`    | Overlap between chunks              |
+| `attrs`           | string  | all     | Comma-separated attributes          |
+| `format`          | string  | `text`  | `json` or `text`                    |
+| `include_summary` | boolean | `true`  | Include per-segment summary         |
+| `benchmark`       | boolean | `false` | Print timing breakdown              |
+| `no_queue`        | boolean | `true`  | Run directly (server default: true) |
+| `no_streaming`    | boolean | `true`  | Disable streaming output            |
 
 ---
 
 ## `POST /index`
 
+Uses **multipart/form-data** file upload.
+
 ```bash
 curl -X POST http://localhost:8000/index \
-  -H "Content-Type: application/json" \
-  -d '{
-    "video_path": "/data/video.mp4",
-    "chunk_duration": 15,
-    "overlap": 1
-  }'
-# Returns: { "video_id": "abc123def456", "indexed_count": 20 }
+  -F "video=@video.mp4" \
+  -F "chunk_duration=15s" \
+  -F "overlap=1s"
+# Returns: { "ok": true, "output": "...", "error": "" }
 ```
+
+| Field             | Type    | Default | Description                         |
+| ----------------- | ------- | ------- | ----------------------------------- |
+| `video`           | file    | —       | Video file to upload (required)     |
+| `chunk_duration`  | string  | `15s`   | Duration per chunk                  |
+| `overlap`         | string  | `1s`    | Overlap between chunks              |
+| `attrs`           | string  | none    | Comma-separated attributes          |
+| `include_summary` | boolean | `true`  | Include per-segment summary         |
+| `benchmark`       | boolean | `false` | Print timing breakdown              |
+| `no_queue`        | boolean | `true`  | Run directly (server default: true) |
+| `no_streaming`    | boolean | `true`  | Disable streaming output            |
 
 ---
 
 ## `POST /transcribe`
 
+Uses **multipart/form-data** file upload.
+
 ```bash
 curl -X POST http://localhost:8000/transcribe \
-  -H "Content-Type: application/json" \
-  -d '{
-    "video_path": "/data/video.mp4",
-    "format": "srt"
-  }'
+  -F "video=@video.mp4" \
+  -F "format=srt"
 ```
+
+| Field          | Type    | Default | Description                           |
+| -------------- | ------- | ------- | ------------------------------------- |
+| `video`        | file    | —       | Video/audio file to upload (required) |
+| `format`       | string  | `text`  | `text`, `vtt`, or `srt`               |
+| `output`       | string  | none    | Output file path on server            |
+| `benchmark`    | boolean | `false` | Print timing breakdown                |
+| `no_queue`     | boolean | `true`  | Run directly (server default: true)   |
+| `no_streaming` | boolean | `true`  | Disable streaming output              |
 
 ---
 
@@ -101,15 +132,18 @@ curl -s -X POST http://localhost:8000/search \
 Response:
 
 ```json
-[
-  {
-    "score": 0.92,
-    "video_id": "abc123def456",
-    "content": "...",
-    "start": 30.0,
-    "end": 45.0
-  }
-]
+{
+  "count": 3,
+  "results": [
+    {
+      "score": 0.92,
+      "video_id": "abc123def456",
+      "content": "...",
+      "start": 30.0,
+      "end": 45.0
+    }
+  ]
+}
 ```
 
 ---
