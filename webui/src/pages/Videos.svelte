@@ -10,7 +10,6 @@
 
   let videos = $state<Video[]>([]);
   let loading = $state(true);
-  let error = $state<string | null>(null);
 
   onMount(() => {
     listVideos()
@@ -40,9 +39,10 @@
     or chat with it.
   </p>
 
-  <VideoSearch />
-
-  {#if error}<div class="error-box">{error}</div>{/if}
+  <VideoSearch
+    disabled={!videos.length}
+    placeholder={!videos.length ? "Upload videos to search" : ""}
+  />
 
   {#if loading}
     <p class="flex gap-x-2 items-center">

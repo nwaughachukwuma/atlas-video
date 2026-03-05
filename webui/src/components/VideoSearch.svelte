@@ -1,6 +1,8 @@
 <script lang="ts" module>
   type Props = {
     videoId?: string | null;
+    disabled?: boolean;
+    placeholder?: string;
   };
 </script>
 
@@ -12,15 +14,19 @@
   import { toPath } from "../lib/routing.ts";
   import { toast } from "svelte-sonner";
 
-  let { videoId = null }: Props = $props();
+  let { videoId = null, disabled, placeholder }: Props = $props();
 
   let query = $state("");
   let results = $state<SearchResult[] | null>(null);
   let searching = $state(false);
 
   const isScoped = $derived(!!videoId);
-  const placeholder = $derived(
-    isScoped ? "Search within this video..." : "Search across all video...",
+  const _placeholder = $derived.by(() =>
+    placeholder
+      ? placeholder
+      : isScoped
+        ? "Search within this video..."
+        : "Search across all video...",
   );
   const topK = $derived(isScoped ? 10 : 20);
 
@@ -52,9 +58,10 @@
     <input
       type="search"
       bind:value={query}
-      {placeholder}
+      placeholder={_placeholder}
       class="flex-1"
       onkeydown={handleKey}
+      {disabled}
     />
     <button
       class="btn-primary flex items-center gap-x-2"
