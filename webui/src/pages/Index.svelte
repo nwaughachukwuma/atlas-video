@@ -20,14 +20,12 @@
 
   let loading: boolean = false;
   let result: IndexResult | null = null;
-  let error: string | null = null;
   let taskInfo: TaskQueuedResult | null = null;
 
   async function submit() {
     if (loading || !file) return;
     loading = true;
     result = null;
-    error = null;
     taskInfo = null;
 
     return indexVideo(file, {
@@ -71,7 +69,6 @@
       bind:file
       onChange={() => {
         result = null;
-        error = null;
       }}
     />
   </div>
@@ -134,8 +131,6 @@
       Index Video
     {/if}
   </button>
-
-  {#if error}<div class="error-box">{error}</div>{/if}
 
   {#if taskInfo}
     <div class="success-box">

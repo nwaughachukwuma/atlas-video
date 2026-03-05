@@ -20,7 +20,6 @@
   let no_queue: boolean = true;
   let loading: boolean = false;
   let result: ExtractResult | null = null;
-  let error: string | null = null;
   let taskInfo: TaskQueuedResult | null = null;
 
   async function submit() {
@@ -28,7 +27,6 @@
 
     loading = true;
     result = null;
-    error = null;
     taskInfo = null;
 
     return extract(file, {
@@ -75,7 +73,6 @@
       bind:file
       onChange={() => {
         result = null;
-        error = null;
       }}
     />
   </div>
@@ -144,8 +141,6 @@
       Extract Insights
     {/if}
   </button>
-
-  {#if error}<div class="error-box">{error}</div>{/if}
 
   {#if taskInfo}
     <div class="success-box">

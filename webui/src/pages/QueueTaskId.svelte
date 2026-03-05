@@ -113,14 +113,13 @@
           >
         </div>{/if}
     </div>
-    {#if task.error}
-      <div class="error-box mt-4">{task.error}</div>
-    {/if}
+
     {#if task.output_path}
       <div class="success-box mt-4">
         Output: <code class="font-mono text-[0.78rem]">{task.output_path}</code>
       </div>
     {/if}
+
     {#if task.status === "pending" || task.status === "running"}
       <p class="text-muted flex items-center gap-x-2 text-[0.85rem] mt-4">
         <LoaderCircleIcon
