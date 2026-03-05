@@ -7,15 +7,16 @@
 </script>
 
 <script lang="ts">
-  import { FilmIcon, UploadIcon, XIcon } from "lucide-svelte";
+  import { UploadIcon, XIcon } from "lucide-svelte";
   let {
     accept = "video/*",
     file = $bindable<File | null>(null),
     onChange = () => {},
   }: Prop = $props();
 
-  let dragging: boolean = $state(false);
-  let input: HTMLInputElement | null = $state(null);
+  let dragging = $state(false);
+  let input = $state<HTMLInputElement | null>(null);
+  let previewUrl = $state<string | null>(null);
 
   function handleDragOver(e: DragEvent): void {
     e.preventDefault();
@@ -34,7 +35,9 @@
   }
 
   function setFile(f: File): void {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
     file = f;
+    previewUrl = URL.createObjectURL(f);
     onChange(f);
   }
 
@@ -44,8 +47,12 @@
     if (f) setFile(f);
   }
 
-  function clear(): void {
+  function clear() {
     file = null;
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      previewUrl = null;
+    }
     if (input) input.value = "";
     onChange(null);
   }
@@ -72,19 +79,28 @@
   }`}
 >
   {#if file}
-    <div class="flex items-center gap-3 text-left">
-      <span class="text-cobalt flex"
-        ><FilmIcon size={20} strokeWidth={1.5} /></span
-      >
-      <div class="flex-1">
-        <span class="block text-[0.9rem] font-medium">{file.name}</span>
-        <span class="block text-[0.78rem] text-muted"
-          >{formatSize(file.size)}</span
-        >
+    <div class="flex gap-3 items-start">
+      <div class="flex flex-1 flex-col gap-3 items-start text-left w-full">
+        {#if previewUrl}
+          <video
+            src={previewUrl}
+            class="max-w-44 aspect-video rounded object-cover grayscale"
+          >
+            <track kind="captions" />
+          </video>
+        {/if}
+        <div>
+          <span class="block text-[0.88rem] font-medium truncate">
+            {file.name}
+          </span>
+          <span class="block text-[0.75rem] text-muted">
+            {formatSize(file.size)}
+          </span>
+        </div>
       </div>
       <button
         type="button"
-        class="bg-transparent border-none text-muted p-1 leading-none hover:text-danger"
+        class="bg-transparent border-none text-muted p-1 leading-none hover:text-danger shrink-0"
         onclick={clear}
         title="Remove file"><XIcon size={16} strokeWidth={2} /></button
       >

@@ -75,26 +75,33 @@
           <XIcon size={16} />
         </button>
       </div>
-      <ol class="list-none m-0 py-2 px-0">
-        {#each steps as s}
-          <li
-            class="flex gap-4 items-start px-5 py-[0.9rem] border-b border-line last:border-b-0"
-          >
-            <span
-              class="font-mono text-[0.72rem] font-semibold text-cobalt opacity-70 min-w-[2.2rem] pt-[0.1em] tracking-[0.04em]"
+      <ol class="list-none m-0 py-5 px-5 flex flex-col gap-3">
+        {#each steps as s, i}
+          <li class="flex gap-3 items-start">
+            <div
+              class="shrink-0 w-7 h-7 rounded-full bg-cobalt/10 border border-cobalt/20 flex items-center justify-center"
             >
-              {s.num}
-            </span>
-            <div class="flex flex-col gap-[0.2rem]">
+              <span class="font-mono text-[0.65rem] font-bold text-cobalt">
+                {i + 1}
+              </span>
+            </div>
+            <div class="flex flex-col gap-[0.15rem]">
               <strong
                 class="font-sans text-[0.88rem] font-bold text-ink tracking-[-0.005em]"
                 >{s.action}</strong
               >
-              <span class="text-[0.83rem] text-ink-2 leading-[1.4]"
+              <span class="text-[0.82rem] text-muted leading-[1.45]"
                 >{s.detail}</span
               >
             </div>
           </li>
+          {#if i < steps.length - 1}
+            <li class="flex gap-3 items-center" aria-hidden="true">
+              <div class="w-7 flex justify-center">
+                <div class="w-px h-4 bg-line"></div>
+              </div>
+            </li>
+          {/if}
         {/each}
       </ol>
     </div>
