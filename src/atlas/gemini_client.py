@@ -20,6 +20,7 @@ Model = Literal[
     "gemini-2.5-flash",
     "gemini-2.5-pro",
     "gemini-3-flash-preview",
+    "gemini-3.1-flash-lite-preview",
     "gemini-3.1-pro-preview",
 ]
 
@@ -113,17 +114,17 @@ class GeminiMediaEngine:
             return response.text
 
         try:
-            return await _handler("gemini-2.5-flash-lite")
+            return await _handler("gemini-3.1-flash-lite-preview")
         except Exception as e:
-            logger.error(f"Error with gemini-2.5-flash-lite: {e}. Falling back to gemini-2.5-flash")
-            return await _handler("gemini-2.5-flash")
+            logger.error(f"Error with gemini-3.1-flash-lite-preview: {e}. Falling back to gemini-2.5-flash-lite")
+            return await _handler("gemini-2.5-flash-lite")
 
     @process_time()
     async def generate_summary(
         self,
         content: str,
         system_prompt: str,
-        model: Model = "gemini-2.5-flash-lite",
+        model: Model = "gemini-3.1-flash-lite-preview",
     ) -> str:
         """Generate text using Gemini"""
         from google.genai import types

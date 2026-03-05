@@ -110,7 +110,7 @@ async def _stream_response(
 
     aclient = GeminiClient.get_client().aio
     async for chunk in await aclient.models.generate_content_stream(
-        model="gemini-2.5-flash-lite",
+        model="gemini-3.1-flash-lite-preview",
         contents=[query],
         config=config,
     ):
