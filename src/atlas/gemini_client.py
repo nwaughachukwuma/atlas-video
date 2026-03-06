@@ -6,12 +6,13 @@ from __future__ import annotations
 
 import asyncio
 import os
-from typing import TYPE_CHECKING, Literal, Optional
+from typing import TYPE_CHECKING, Literal
+
+from google import genai
 
 from .utils import RetryConfig, logger, process_time, retry
 
 if TYPE_CHECKING:
-    from google import genai
     from google.genai import types as genai_types
 
 
@@ -20,38 +21,20 @@ Model = Literal[
     "gemini-2.5-flash",
     "gemini-2.5-pro",
     "gemini-3-flash-preview",
+    "gemini-3.1-flash-lite-preview",
     "gemini-3.1-pro-preview",
 ]
 
 
-class GeminiClient:
-    """Client for Google Gemini API"""
-
-    _client: Optional["genai.Client"] = None
-
-    @classmethod
-    def get_client(cls) -> "genai.Client":
-        """Get Gemini client (lazy-initialised on first use)."""
-        if cls._client is None:
-            from google import genai
-
-            api_key = os.environ.get("GEMINI_API_KEY")
-            if not api_key:
-                raise ValueError("GEMINI_API_KEY environment variable is required")
-            cls._client = genai.Client(api_key=api_key)
-        return cls._client
-
-    @classmethod
-    def reset_client(cls) -> None:
-        """Reset the client (useful for testing)"""
-        cls._client = None
+api_key = os.environ["GEMINI_API_KEY"]
+gemini_client = genai.Client(api_key=api_key)
 
 
 class GeminiMediaEngine:
     """Engine for analyzing media using Gemini"""
 
     def __init__(self):
-        self.client = GeminiClient.get_client()
+        self.client = gemini_client
 
     @process_time()
     @retry(RetryConfig(max_retries=2, delay=5, backoff=1.5))
@@ -113,17 +96,17 @@ class GeminiMediaEngine:
             return response.text
 
         try:
-            return await _handler("gemini-2.5-flash-lite")
+            return await _handler("gemini-3.1-flash-lite-preview")
         except Exception as e:
-            logger.error(f"Error with gemini-2.5-flash-lite: {e}. Falling back to gemini-2.5-flash")
-            return await _handler("gemini-2.5-flash")
+            logger.error(f"Error with gemini-3.1-flash-lite-preview: {e}. Falling back to gemini-2.5-flash-lite")
+            return await _handler("gemini-2.5-flash-lite")
 
     @process_time()
     async def generate_summary(
         self,
         content: str,
         system_prompt: str,
-        model: Model = "gemini-2.5-flash-lite",
+        model: Model = "gemini-3.1-flash-lite-preview",
     ) -> str:
         """Generate text using Gemini"""
         from google.genai import types

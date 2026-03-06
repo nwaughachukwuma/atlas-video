@@ -1,0 +1,228 @@
+/* ── Design System: Poster Modernist ────────────────────────────────────────── */
+
+@import url("https://fonts.googleapis.com/css2?family=General+Sans:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap");
+@import "tailwindcss";
+
+/* ── Theme tokens → Tailwind utilities ───────────────────────────────────────
+   --color-*   →  text-*, bg-*, border-*
+   --font-*    →  font-*
+────────────────────────────────────────────────────────────────────────────── */
+@theme {
+  --color-cobalt: #1351aa;
+  --color-cobalt-dark: #0f3d7a;
+  --color-canvas: #e3e2de;
+  --color-surface: #f0efec;
+  --color-surface-alt: #d9d8d4;
+  --color-ink: #141414;
+  --color-ink-2: #444343;
+  --color-muted: #7a7a7a;
+  --color-line: #c7c7c7;
+  --color-success: #1a7a4c;
+  --color-warning: #b37400;
+  --color-danger: #b91c1c;
+
+  --font-sans: "General Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", "SF Mono", monospace;
+}
+
+/* ── Base element styles ─────────────────────────────────────────────────── */
+@layer base {
+  :root {
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--color-ink);
+    background-color: var(--color-canvas);
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+  }
+
+  a {
+    color: var(--color-cobalt);
+    text-decoration: none;
+    transition: color 0.3s linear;
+  }
+  a:hover {
+    color: var(--color-cobalt-dark);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    margin: 0 0 0.5em;
+    font-family: var(--font-sans);
+    font-weight: 700;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    color: var(--color-ink);
+  }
+  h1 {
+    font-size: 3.5rem;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    line-height: 0.85;
+  }
+  h2 {
+    font-size: 1.75rem;
+  }
+  h3 {
+    font-size: 1.1rem;
+  }
+
+  p {
+    margin: 0 0 1em;
+    color: var(--color-ink-2);
+    line-height: 1.5;
+  }
+
+  input,
+  select,
+  textarea {
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: 0;
+    color: var(--color-ink);
+    font-family: inherit;
+    font-size: 0.9rem;
+    padding: 0.5em 0.75em;
+    outline: none;
+    transition: border-color 0.3s linear;
+  }
+  input:focus,
+  select:focus,
+  textarea:focus {
+    border-color: var(--color-cobalt);
+  }
+
+  button {
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.5em 1.2em;
+    border-radius: 0;
+    border: 1px solid transparent;
+    transition: all 0.3s linear;
+    letter-spacing: -0.01em;
+  }
+
+  pre {
+    background: var(--color-surface-alt);
+    border: 1px solid var(--color-line);
+    border-radius: 0;
+    padding: 1rem;
+    overflow: auto;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--color-ink);
+  }
+
+  label {
+    font-size: 0.85rem;
+    color: var(--color-muted);
+    display: block;
+    margin-bottom: 0.3em;
+  }
+
+  #app {
+    display: flex;
+    min-height: 100vh;
+  }
+}
+
+/* ── Reusable component classes ──────────────────────────────────────────── */
+@layer components {
+  /* Buttons */
+  .btn-primary {
+    background: var(--color-cobalt);
+    color: #fff;
+    border-color: var(--color-cobalt);
+  }
+  .btn-primary:hover {
+    background: var(--color-cobalt-dark);
+    border-color: var(--color-cobalt-dark);
+  }
+  .btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .btn-secondary {
+    background: transparent;
+    border-color: var(--color-line);
+    color: var(--color-ink);
+  }
+  .btn-secondary:hover {
+    border-color: var(--color-cobalt);
+    color: var(--color-cobalt);
+  }
+
+  /* Card surface */
+  .card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    padding: 1.25rem;
+  }
+
+  /* Status badges */
+  .badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.15em 0.55em;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border: 1px solid;
+  }
+  .badge-pending {
+    border-color: var(--color-muted);
+    color: var(--color-muted);
+  }
+  .badge-running {
+    border-color: var(--color-cobalt);
+    color: var(--color-cobalt);
+  }
+  .badge-completed {
+    border-color: var(--color-success);
+    color: var(--color-success);
+  }
+  .badge-failed {
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+  }
+  .badge-timeout {
+    border-color: var(--color-warning);
+    color: var(--color-warning);
+  }
+
+  /* Feedback boxes */
+
+  .success-box {
+    background: #f0fdf4;
+    border: 1px solid var(--color-success);
+    color: var(--color-success);
+    padding: 0.75rem 1rem;
+    margin: 0.75rem 0;
+    font-size: 0.88rem;
+  }
+
+  /* Pill tag */
+  .tag {
+    display: inline-block;
+    background: var(--color-surface-alt);
+    border: 1px solid var(--color-line);
+    border-radius: 99px;
+    font-size: 0.78rem;
+    padding: 0.15em 0.6em;
+    color: var(--color-muted);
+  }
+}

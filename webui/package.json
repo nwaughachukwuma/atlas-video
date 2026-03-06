@@ -1,0 +1,29 @@
+{
+  "name": "webui",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "watch": "vite build --watch",
+    "preview": "vite preview",
+    "check": "svelte-check"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^6.2.4",
+    "svelte": "^5.53.7",
+    "svelte-check": "^4.4.4",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1"
+  },
+  "dependencies": {
+    "@mateothegreat/svelte5-router": "^2.16.19",
+    "@tailwindcss/vite": "^4.2.1",
+    "clsx": "^2.1.1",
+    "lucide-svelte": "^0.577.0",
+    "marked": "^17.0.4",
+    "svelte-sonner": "^1.0.8",
+    "tailwindcss": "^4.2.1"
+  }
+}

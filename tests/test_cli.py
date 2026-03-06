@@ -333,9 +333,7 @@ class TestValidateVideoPath:
 
 
 class TestValidateApiKeys:
-    def test_passes_when_keys_present(self, monkeypatch):
-        monkeypatch.setenv("GEMINI_API_KEY", "key1")
-        monkeypatch.setenv("GROQ_API_KEY", "key2")
+    def test_passes_when_keys_present(self):
         # Should not raise
         validate_api_keys(require_gemini=True, require_groq=True)
 
@@ -345,7 +343,6 @@ class TestValidateApiKeys:
             validate_api_keys(require_gemini=True, require_groq=False)
 
     def test_exits_when_groq_missing(self, monkeypatch):
-        monkeypatch.setenv("GEMINI_API_KEY", "key1")
         monkeypatch.delenv("GROQ_API_KEY", raising=False)
         with pytest.raises(SystemExit):
             validate_api_keys(require_gemini=False, require_groq=True)
@@ -374,10 +371,7 @@ class TestCmdIndex:
             no_streaming=False,
         )
 
-    def test_success_prints_video_id(self, tmp_path, monkeypatch, progress_ctx, mock_model_dump):
-        monkeypatch.setenv("GEMINI_API_KEY", "k1")
-        monkeypatch.setenv("GROQ_API_KEY", "k2")
-
+    def test_success_prints_video_id(self, tmp_path, progress_ctx, mock_model_dump):
         video = tmp_path / "v.mp4"
         video.touch()
         args = self._args(video_path=str(video))
@@ -401,15 +395,11 @@ class TestCmdIndex:
         with pytest.raises(SystemExit):
             cmd_index(self._args(str(video)))
 
-    def test_bad_video_path_exits(self, monkeypatch):
-        monkeypatch.setenv("GEMINI_API_KEY", "k1")
-        monkeypatch.setenv("GROQ_API_KEY", "k2")
+    def test_bad_video_path_exits(self):
         with pytest.raises(SystemExit):
             cmd_index(self._args("/no/such/file.mp4"))
 
-    def test_exception_in_run_exits(self, tmp_path, monkeypatch, progress_ctx):
-        monkeypatch.setenv("GEMINI_API_KEY", "k1")
-        monkeypatch.setenv("GROQ_API_KEY", "k2")
+    def test_exception_in_run_exits(self, tmp_path, progress_ctx):
         video = tmp_path / "v.mp4"
         video.touch()
         with (
@@ -435,9 +425,7 @@ class TestCmdSearch:
             benchmark=False,
         )
 
-    def test_success_with_results(self, monkeypatch, capsys):
-        monkeypatch.setenv("GEMINI_API_KEY", "k1")
-
+    def test_success_with_results(self, capsys):
         mock_result = MagicMock(score=0.95, video_id="vid1", start=0.0, end=10.0, content="visual cues about people")
         mock_result.model_dump.return_value = {
             "score": 0.95,
@@ -458,17 +446,14 @@ class TestCmdSearch:
         assert body["count"] == 1
         assert body["results"][0]["video_id"] == "vid1"
 
-    def test_empty_results_prints_message(self, monkeypatch, capsys):
-        monkeypatch.setenv("GEMINI_API_KEY", "k1")
-
+    def test_empty_results_prints_message(self, capsys):
         with (
             patch("atlas.cli.cmd_explore.validate_api_keys"),
             patch("atlas.cli.cmd_explore.asyncio.run", side_effect=mock_asyncio_run(return_value=[])),
         ):
             cmd_search(self._args())  # no SystemExit — just a "no results" message
 
-    def test_exception_exits(self, monkeypatch):
-        monkeypatch.setenv("GEMINI_API_KEY", "k1")
+    def test_exception_exits(self):
         with (
             patch("atlas.cli.cmd_explore.validate_api_keys"),
             patch("atlas.cli.cmd_explore.asyncio.run", side_effect=mock_asyncio_run(side_effect=RuntimeError("fail"))),
@@ -491,8 +476,7 @@ class TestCmdChat:
     def _args(self, video_id="vid1", query="What is this?"):
         return argparse.Namespace(video_id=video_id, query=query, benchmark=False)
 
-    def test_success(self, monkeypatch, progress_ctx):
-        monkeypatch.setenv("GEMINI_API_KEY", "k1")
+    def test_success(self, progress_ctx):
         with (
             patch("atlas.cli.cmd_explore.validate_api_keys"),
             patch("atlas.cli.cmd_explore.make_progress", return_value=progress_ctx),
@@ -505,8 +489,7 @@ class TestCmdChat:
         with pytest.raises(SystemExit):
             cmd_chat(self._args())
 
-    def test_exception_exits(self, monkeypatch, progress_ctx):
-        monkeypatch.setenv("GEMINI_API_KEY", "k1")
+    def test_exception_exits(self, progress_ctx):
         with (
             patch("atlas.cli.cmd_explore.validate_api_keys"),
             patch("atlas.cli.cmd_explore.make_progress", return_value=progress_ctx),
@@ -683,8 +666,7 @@ class TestCmdTranscribe:
             no_streaming=False,
         )
 
-    def test_success_text_to_stdout(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("GROQ_API_KEY", "k1")
+    def test_success_text_to_stdout(self, tmp_path):
         video = tmp_path / "v.mp4"
         video.touch()
         with (
@@ -695,8 +677,7 @@ class TestCmdTranscribe:
         ):
             cmd_transcribe(self._args(str(video)))
 
-    def test_success_saves_to_file(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("GROQ_API_KEY", "k1")
+    def test_success_saves_to_file(self, tmp_path):
         video = tmp_path / "v.mp4"
         video.touch()
         out = tmp_path / "out.srt"
@@ -710,7 +691,6 @@ class TestCmdTranscribe:
             cmd_transcribe(self._args(str(video), fmt="srt", output=str(out)))
 
     def test_invalid_format_exits(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("GROQ_API_KEY", "k1")
         video = tmp_path / "v.mp4"
         video.touch()
         with pytest.raises(SystemExit):
@@ -721,13 +701,11 @@ class TestCmdTranscribe:
         with pytest.raises(SystemExit):
             cmd_transcribe(self._args())
 
-    def test_bad_video_path_exits(self, monkeypatch):
-        monkeypatch.setenv("GROQ_API_KEY", "k1")
+    def test_bad_video_path_exits(self):
         with pytest.raises(SystemExit):
             cmd_transcribe(self._args("/no/file.mp4"))
 
-    def test_exception_exits(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("GROQ_API_KEY", "k1")
+    def test_exception_exits(self, tmp_path):
         video = tmp_path / "v.mp4"
         video.touch()
         with (
@@ -758,8 +736,7 @@ class TestCmdExtract:
             no_streaming=False,
         )
 
-    def test_success_text_format(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("GEMINI_API_KEY", "k1")
+    def test_success_text_format(self, tmp_path):
         video = tmp_path / "v.mp4"
         video.touch()
         mock_result = MagicMock(duration=10.0, video_descriptions=[])
@@ -769,14 +746,7 @@ class TestCmdExtract:
         ):
             cmd_extract(self._args(str(video)))
 
-    def test_success_json_to_stdout(
-        self,
-        tmp_path,
-        monkeypatch,
-        capsys,
-        mock_model_dump_json,
-    ):
-        monkeypatch.setenv("GEMINI_API_KEY", "k1")
+    def test_success_json_to_stdout(self, tmp_path, capsys, mock_model_dump_json):
         video = tmp_path / "v.mp4"
         video.touch()
 
@@ -792,8 +762,7 @@ class TestCmdExtract:
         data = json.loads(captured.out)
         assert data["duration"] == 10.0
 
-    def test_success_json_to_file(self, tmp_path, monkeypatch, mock_model_dump_json):
-        monkeypatch.setenv("GEMINI_API_KEY", "k1")
+    def test_success_json_to_file(self, tmp_path, mock_model_dump_json):
         video = tmp_path / "v.mp4"
         video.touch()
         out = tmp_path / "out.json"
@@ -807,36 +776,31 @@ class TestCmdExtract:
             cmd_extract(self._args(str(video), fmt="json", output=str(out)))
         assert out.exists()
 
-    def test_invalid_attr_exits(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("GEMINI_API_KEY", "k1")
+    def test_invalid_attr_exits(self, tmp_path):
         video = tmp_path / "v.mp4"
         video.touch()
         with patch("atlas.cli.cmd_media.validate_api_keys"):
             with pytest.raises(SystemExit):
                 cmd_extract(self._args(str(video), attrs=["invalid_attr"]))
 
-    def test_invalid_format_exits(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("GEMINI_API_KEY", "k1")
+    def test_invalid_format_exits(self, tmp_path):
         video = tmp_path / "v.mp4"
         video.touch()
         with patch("atlas.cli.cmd_media.validate_api_keys"):
             with pytest.raises(SystemExit):
                 cmd_extract(self._args(str(video), fmt="yaml"))
 
-    def test_missing_api_key_exits(self, tmp_path, monkeypatch):
-        monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    def test_missing_api_key_exits(self, tmp_path):
         video = tmp_path / "v.mp4"
         video.touch()
         with pytest.raises(SystemExit):
             cmd_extract(self._args(str(video)))
 
-    def test_bad_video_path_exits(self, monkeypatch):
-        monkeypatch.setenv("GEMINI_API_KEY", "k1")
+    def test_bad_video_path_exits(self):
         with pytest.raises(SystemExit):
             cmd_extract(self._args("/no/file.mp4"))
 
-    def test_exception_exits(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("GEMINI_API_KEY", "k1")
+    def test_exception_exits(self, tmp_path):
         video = tmp_path / "v.mp4"
         video.touch()
         with (
@@ -1101,8 +1065,6 @@ class TestCmdTranscribeQueued:
     """Test that cmd_transcribe correctly queues when no_queue is False."""
 
     def test_queue_path(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("GROQ_API_KEY", "k1")
-
         mock_queue = MagicMock()
         mock_queue.submit.return_value = "test1234"
         monkeypatch.setattr("atlas.task_queue.get_queue", lambda: mock_queue)

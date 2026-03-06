@@ -8,6 +8,8 @@ from atlas.chat_handler import _stream_response, chat_with_video
 from atlas.vector_store import SearchResult
 from atlas.vector_store.video_chat import ChatResult, ChatRole
 
+from .helpers import async_gen
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -32,12 +34,6 @@ def _make_chat_result(content: str, role: ChatRole = "user", video_id: str = "vi
         role=role,
         content=content,
     )
-
-
-async def _async_gen(*items):
-    """Yield items from an async generator — helper for mocking Gemini streaming."""
-    for item in items:
-        yield item
 
 
 # ---------------------------------------------------------------------------
@@ -75,7 +71,7 @@ class TestChatWorkflow:
     @pytest.mark.asyncio
     async def test_streams_chunks(self, patch_stores):
         """chat_with_video yields text chunks from _stream_response."""
-        with patch("atlas.chat_handler._stream_response", return_value=_async_gen("Hello", " world")):
+        with patch("atlas.chat_handler._stream_response", return_value=async_gen("Hello", " world")):
             chunks = [chunk async for chunk in chat_with_video("vid_001", "What is in the video?")]
 
         assert chunks == ["Hello", " world"]
@@ -85,7 +81,7 @@ class TestChatWorkflow:
         """After streaming, record_turn is called for user then assistant."""
         _, mock_vc = patch_stores
 
-        with patch("atlas.chat_handler._stream_response", return_value=_async_gen("Great video!")):
+        with patch("atlas.chat_handler._stream_response", return_value=async_gen("Great video!")):
             _ = [chunk async for chunk in chat_with_video("vid_001", "Describe the video")]
 
         assert mock_vc.record_turn.await_count == 2
@@ -96,7 +92,7 @@ class TestChatWorkflow:
     @pytest.mark.asyncio
     async def test_raises_on_empty_response(self, patch_stores):
         """chat_with_video raises ValueError when Gemini returns an empty string."""
-        with patch("atlas.chat_handler._stream_response", return_value=_async_gen("   ")):
+        with patch("atlas.chat_handler._stream_response", return_value=async_gen("   ")):
             with pytest.raises(ValueError, match="Empty response"):
                 _ = [chunk async for chunk in chat_with_video("vid_001", "anything")]
 
@@ -129,7 +125,7 @@ class TestChatWorkflow:
         """top_k_context and top_k_chat are forwarded to the underlying store searches."""
         mock_vi, mock_vc = patch_stores
 
-        with patch("atlas.chat_handler._stream_response", return_value=_async_gen("answer")):
+        with patch("atlas.chat_handler._stream_response", return_value=async_gen("answer")):
             _ = [chunk async for chunk in chat_with_video("vid_001", "query", top_k_context=3, top_k_chat=5)]
 
         mock_vi.search.assert_awaited_once_with("query", top_k=3, video_id="vid_001")
@@ -145,21 +141,11 @@ class TestStreamResponse:
         return chunk
 
     @pytest.mark.asyncio
-    async def test_yields_text_chunks(self):
+    async def test_yields_text_chunks(self, mock_gemini_client_with_chunks):
         """_stream_response yields .text from each Gemini chunk."""
         chunks = [self._make_chunk("Hello"), self._make_chunk(" world")]
-
-        mock_stream = _async_gen(*chunks)
-        mock_aclient = MagicMock()
-        mock_aclient.models.generate_content_stream = AsyncMock(return_value=mock_stream)
-
-        mock_gemini_client = MagicMock()
-        mock_gemini_client.get_client.return_value.aio = mock_aclient
-
-        with (
-            patch("atlas.gemini_client.GeminiClient", mock_gemini_client),
-            patch("atlas.chat_handler.GeminiClient", mock_gemini_client, create=True),
-        ):
+        mock_gemini_client = mock_gemini_client_with_chunks(chunks)
+        with patch("atlas.chat_handler.gemini_client", mock_gemini_client, create=True):
             result = [
                 chunk
                 async for chunk in _stream_response(
@@ -173,7 +159,7 @@ class TestStreamResponse:
         assert result == ["Hello", " world"]
 
     @pytest.mark.asyncio
-    async def test_skips_chunks_without_text(self):
+    async def test_skips_chunks_without_text(self, mock_gemini_client_with_chunks):
         """Chunks with falsy .text (None or empty string) are not yielded."""
         chunks = [
             self._make_chunk("Real text"),
@@ -181,17 +167,9 @@ class TestStreamResponse:
             self._make_chunk(""),
             self._make_chunk("More text"),
         ]
-
-        mock_stream = _async_gen(*chunks)
-        mock_aclient = MagicMock()
-        mock_aclient.models.generate_content_stream = AsyncMock(return_value=mock_stream)
-
-        mock_gemini_client = MagicMock()
-        mock_gemini_client.get_client.return_value.aio = mock_aclient
-
+        mock_gemini_client = mock_gemini_client_with_chunks(chunks)
         with (
-            patch("atlas.gemini_client.GeminiClient", mock_gemini_client),
-            patch("atlas.chat_handler.GeminiClient", mock_gemini_client, create=True),
+            patch("atlas.chat_handler.gemini_client", mock_gemini_client, create=True),
         ):
             result = [
                 chunk

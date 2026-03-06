@@ -5,6 +5,8 @@ Unit tests for atlas.vector_store — VideoIndex and VideoChat collections.
 
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from src.atlas.utils import VideoAttrAnalysis
 from src.atlas.vector_store import (
     ChatDocument,
@@ -15,6 +17,7 @@ from src.atlas.vector_store import (
     VideoEntry,
     VideoIndex,
 )
+from src.atlas.vector_store.base import BaseCollection, get_or_create_collection
 from src.atlas.vector_store.video_chat import default_video_chat
 from src.atlas.vector_store.video_index import DEFAULT_STORE_ROOT, default_video_index
 from src.atlas.video_processor import VideoDescription
@@ -274,6 +277,52 @@ class TestVideoIndex:
         vi = default_video_index()
         assert vi.col_path == DEFAULT_STORE_ROOT / "video_index"
         assert vi.embedding_dim == 768
+
+    def test_collection_reuses_shared_handle(self, tmp_path):
+        shared = MagicMock()
+        with (
+            patch.object(BaseCollection, "_init_zvec", return_value=None),
+            patch.object(VideoIndex, "_build_schema", return_value=MagicMock()),
+            patch.dict("src.atlas.vector_store.base._collection_cache", {}, clear=True),
+            patch("src.atlas.vector_store.base.get_or_create_collection", return_value=shared) as open_collection,
+        ):
+            first = VideoIndex(col_path=tmp_path / "video_index")
+            second = VideoIndex(col_path=tmp_path / "video_index")
+
+            assert first.collection is shared
+            assert second.collection is shared
+
+        open_collection.assert_called_once()
+
+
+class TestBaseCollectionHelpers:
+    def test_get_or_create_collection_creates_for_empty_existing_directory(self, tmp_path):
+        collection_path = tmp_path / "video_index"
+        collection_path.mkdir()
+        fake_zvec = MagicMock()
+        created = MagicMock()
+        fake_zvec.create_and_open.return_value = created
+
+        with patch.dict("sys.modules", {"zvec": fake_zvec}):
+            result = get_or_create_collection(str(collection_path), MagicMock())
+
+        assert result is created
+        fake_zvec.open.assert_not_called()
+        fake_zvec.create_and_open.assert_called_once()
+
+    def test_get_or_create_collection_raises_without_deleting_existing_path(self, tmp_path):
+        collection_path = tmp_path / "video_index"
+        collection_path.mkdir()
+        (collection_path / "existing").write_text("initialized")
+        fake_zvec = MagicMock()
+        fake_zvec.open.side_effect = RuntimeError("Can't lock read-write collection")
+
+        with patch.dict("sys.modules", {"zvec": fake_zvec}):
+            with pytest.raises(RuntimeError, match="Unable to open zvec collection"):
+                get_or_create_collection(str(collection_path), MagicMock())
+
+        assert collection_path.exists()
+        fake_zvec.create_and_open.assert_not_called()
 
 
 # ---------------------------------------------------------------------------

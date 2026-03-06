@@ -21,3 +21,9 @@ def mock_asyncio_run(return_value=None, side_effect=None):
         return return_value
 
     return _run_mock
+
+
+async def async_gen(*items):
+    """Yield items from an async generator — helper for mocking Gemini streaming."""
+    for item in items:
+        yield item

@@ -63,10 +63,6 @@ case "${SUBCOMMAND}" in
 esac
 
 # ── Ensure writable data directories ────────────────────────────────────────
-# When an existing named volume is mounted its contents survive across image
-# rebuilds, but subdirectories added in a newer image layer are not
-# retroactively created.  Guard against that (and against volumes that were
-# first seeded as root) by creating the dirs here at runtime.
 ATLAS_HOME="${HOME}/.atlas"
 mkdir -p \
     "${ATLAS_HOME}/index" \

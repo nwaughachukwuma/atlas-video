@@ -92,7 +92,7 @@ async def _stream_response(
     """
     from google.genai import types
 
-    from .gemini_client import GeminiClient
+    from .gemini_client import gemini_client
     from .prompts import chat_system_prompt
 
     system_prompt = chat_system_prompt(
@@ -108,9 +108,9 @@ async def _stream_response(
         system_instruction=system_prompt,
     )
 
-    aclient = GeminiClient.get_client().aio
+    aclient = gemini_client.aio
     async for chunk in await aclient.models.generate_content_stream(
-        model="gemini-2.5-flash-lite",
+        model="gemini-3.1-flash-lite-preview",
         contents=[query],
         config=config,
     ):

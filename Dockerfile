@@ -13,6 +13,15 @@
 # Platforms: linux/amd64, linux/arm64
 # ─────────────────────────────────────────────────────────────────────────────
 
+# ── Web UI build stage ───────────────────────────────────────────────────────
+FROM node:22-slim AS ui-builder
+
+WORKDIR /build/webui
+COPY webui/package*.json ./
+RUN npm ci --prefer-offline
+COPY webui/ ./
+RUN npm run build
+
 # ── Build stage: compile wheel from source ───────────────────────────────────
 FROM python:3.12-slim AS builder
 
@@ -21,6 +30,9 @@ WORKDIR /build
 # Copy only the files needed to build the package
 COPY pyproject.toml README.md LICENSE ./
 COPY src/ ./src/
+
+# Overlay the pre-built UI assets into the package source tree
+COPY --from=ui-builder /build/webui/dist ./src/ui
 
 RUN pip install --no-cache-dir build \
  && python -m build --wheel --outdir /dist
@@ -34,8 +46,6 @@ LABEL org.opencontainers.image.source="https://github.com/nwaughachukwuma/atlas-
 LABEL org.opencontainers.image.licenses="Apache-2.0"
 
 # ── System dependencies ──────────────────────────────────────────────────────
-# ffmpeg  : video clipping and audio extraction
-# libgomp1: OpenMP runtime (zvec / numpy dependency)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     libgomp1 \
@@ -55,10 +65,8 @@ RUN pip install --no-cache-dir --user /tmp/*.whl \
 ENV PATH="/home/atlas/.local/bin:${PATH}"
 
 # ── 12-factor configuration (all via ENV) ───────────────────────────────────
-# Required for extract / index / search / chat:
-ENV GEMINI_API_KEY=""
-# Required for transcribe / extract / index:
-ENV GROQ_API_KEY=""
+# Pass secrets at runtime — never bake them into the image:
+#   docker run -e GEMINI_API_KEY="..." -e GROQ_API_KEY="..." ...
 # Optional — set to "true" to enable verbose logging:
 ENV ENABLE_LOGGING="false"
 
@@ -69,7 +77,8 @@ ENV ENABLE_LOGGING="false"
 # image contents, and only if those contents already exist with the right owner.
 RUN mkdir -p \
     /home/atlas/.atlas/index \
-    /home/atlas/.atlas/queue/queued_tasks/results
+    /home/atlas/.atlas/queue/queued_tasks/results \
+    && chmod -R 775 /home/atlas/.atlas
 
 # Mount a named volume here so indexed data survives container restarts:
 #   docker run -v atlas-data:/home/atlas/.atlas ...

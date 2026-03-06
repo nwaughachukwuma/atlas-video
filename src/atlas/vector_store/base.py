@@ -14,6 +14,7 @@ Each subclass is responsible for:
 
 from __future__ import annotations
 
+import threading
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, List, Optional
@@ -21,7 +22,13 @@ from typing import TYPE_CHECKING, Any, List, Optional
 from ..uuid import uuid
 
 if TYPE_CHECKING:
-    from zvec import Collection
+    from zvec import Collection, CollectionSchema
+
+
+_zvec_init_lock = threading.Lock()
+_zvec_initialized = False
+_collection_lock = threading.Lock()
+_collection_cache: dict[str, "Collection"] = {}
 
 
 # ---------------------------------------------------------------------------
@@ -30,22 +37,34 @@ if TYPE_CHECKING:
 # ---------------------------------------------------------------------------
 
 
-def get_or_create_collection(path: str, schema) -> "Collection":
+def get_or_create_collection(path: str, schema: "CollectionSchema") -> "Collection":
     """Open an existing zvec collection or create a new one at *path*."""
     import zvec
 
     from ..logger import logger
 
     p = Path(path)
-    if p.exists():
-        try:
-            return zvec.open(path=path)
-        except Exception as e:
-            logger.info("Error in zvec.open %s", e)
-            import shutil
+    if not p.exists() or (p.is_dir() and not any(p.iterdir())):
+        return zvec.create_and_open(path=path, schema=schema)
+    try:
+        return zvec.open(path=path)
+    except Exception as e:
+        logger.warning("Error in zvec.open %s - path: %s", e, path)
+        raise RuntimeError(f"Unable to open zvec collection at {path}") from e
 
-            shutil.rmtree(p)
-    return zvec.create_and_open(path=path, schema=schema)
+
+def get_shared_collection(path: str, schema: "CollectionSchema") -> "Collection":
+    """Return a process-global zvec collection handle for *path*."""
+    cached = _collection_cache.get(path)
+    if cached is not None:
+        return cached
+
+    with _collection_lock:
+        cached = _collection_cache.get(path)
+        if cached is not None:
+            return cached
+        _collection_cache[path] = get_or_create_collection(path=path, schema=schema)
+        return _collection_cache[path]
 
 
 def make_vector_query(embedding: List[float]):
@@ -87,13 +106,31 @@ class BaseCollection(ABC):
         self.col_path = col_path
         self.embedding_dim = embedding_dim
         self._collection: Optional["Collection"] = None
+        self._init_zvec()
+
+    def _init_zvec(self):
+        global _zvec_initialized
+
+        if _zvec_initialized:
+            return
+
+        import zvec
+
+        with _zvec_init_lock:
+            if not _zvec_initialized:
+                zvec.init(
+                    log_type=zvec.LogType.CONSOLE,
+                    log_level=zvec.LogLevel.WARN,
+                    query_threads=4,
+                )
+                _zvec_initialized = True
 
     # ------------------------------------------------------------------
     # Subclass contract
     # ------------------------------------------------------------------
 
     @abstractmethod
-    def _build_schema(self):
+    def _build_schema(self) -> "CollectionSchema":
         """Return the zvec CollectionSchema for this collection."""
 
     # ------------------------------------------------------------------
@@ -104,8 +141,8 @@ class BaseCollection(ABC):
     def collection(self) -> "Collection":
         """Lazily open or create the zvec collection on first access."""
         if self._collection is None:
-            self.col_path.mkdir(parents=True, exist_ok=True)
-            self._collection = get_or_create_collection(
+            self.col_path.parent.mkdir(parents=True, exist_ok=True)
+            self._collection = get_shared_collection(
                 str(self.col_path),
                 self._build_schema(),
             )

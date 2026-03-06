@@ -54,9 +54,7 @@ class TestVideoIndexIntegration:
 
     @pytest.mark.zvec
     @pytest.mark.asyncio
-    async def test_index_and_search_flow(self, temp_col_path, sample_video_result: VideoProcessorResult, monkeypatch):
-        monkeypatch.setenv("GEMINI_API_KEY", "test-api-key")
-
+    async def test_index_and_search_flow(self, temp_col_path, sample_video_result: VideoProcessorResult):
         vi = VideoIndex(col_path=temp_col_path)
         video_id = "test_video_id_001"
         mock_embedding = [0.1] * 768
@@ -85,9 +83,7 @@ class TestVideoProcessorIntegration:
         return str(video_path)
 
     @pytest.mark.asyncio
-    async def test_processor_config_flow(self, sample_video_path, monkeypatch):
-        monkeypatch.setenv("GEMINI_API_KEY", "test-api-key")
-
+    async def test_processor_config_flow(self, sample_video_path, mock_gemini_client):
         config = VideoProcessorConfig(
             video_path=sample_video_path,
             chunk_duration=5,
@@ -95,31 +91,25 @@ class TestVideoProcessorIntegration:
             description_attrs=["visual_cues"],
         )
 
-        with patch("atlas.gemini_client.GeminiClient.get_client"):
-            processor = VideoProcessor(config)
-            processor._duration = 10.0
-
-            assert processor.chunk_duration == 5
-            assert processor.overlap == 1
+        processor = VideoProcessor(config)
+        processor._duration = 10.0
+        assert processor.chunk_duration == 5
+        assert processor.overlap == 1
 
     @pytest.mark.asyncio
-    async def test_chunk_slicing_with_overlap(self, sample_video_path, monkeypatch):
-        monkeypatch.setenv("GEMINI_API_KEY", "test-api-key")
-
+    async def test_chunk_slicing_with_overlap(self, sample_video_path, mock_gemini_client):
         config = VideoProcessorConfig(
             video_path=sample_video_path,
             chunk_duration=5,
             overlap=1,
         )
 
-        with patch("atlas.gemini_client.GeminiClient.get_client"):
-            processor = VideoProcessor(config)
-            processor._duration = 15.0
-
-            slots = processor._slice_media_file(5, 1)
-            # With 15s duration, 5s chunks, 1s overlap:
-            # 0-5, 4-9, 8-13, 12-15 (approx)
-            assert len(slots) >= 3
+        processor = VideoProcessor(config)
+        processor._duration = 15.0
+        slots = processor._slice_media_file(5, 1)
+        # With 15s duration, 5s chunks, 1s overlap:
+        # 0-5, 4-9, 8-13, 12-15 (approx)
+        assert len(slots) >= 3
 
 
 class TestCLIIntegration:
@@ -158,18 +148,13 @@ class TestEndToEnd:
     """End-to-end tests for complete workflows"""
 
     @pytest.fixture
-    def mock_env_vars(self, monkeypatch):
-        monkeypatch.setenv("GEMINI_API_KEY", "test-gemini-key")
-        monkeypatch.setenv("GROQ_API_KEY", "test-groq-key")
-
-    @pytest.fixture
     def sample_video(self, tmp_path):
         video_path = tmp_path / "sample.mp4"
         video_path.touch()
         return str(video_path)
 
     @pytest.mark.asyncio
-    async def test_get_video_transcript_workflow(self, sample_video, mock_env_vars):
+    async def test_get_video_transcript_workflow(self, sample_video):
         with patch("atlas.transcript.ProcessTranscript") as mock_transcript:
             mock_instance = MagicMock()
             mock_instance.process = AsyncMock(return_value="Test transcript content")
@@ -182,7 +167,7 @@ class TestEndToEnd:
             result = await get_video_transcript(sample_video)
             assert isinstance(result, str)
 
-    def test_package_imports(self, mock_env_vars):
+    def test_package_imports(self):
         import atlas
 
         assert atlas.__version__ is not None

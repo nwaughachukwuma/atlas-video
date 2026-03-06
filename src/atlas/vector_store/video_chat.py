@@ -14,7 +14,9 @@ VideoChat.get_history(video_id, last_n)           — read ordered history from 
 from __future__ import annotations
 
 import json
+import os
 from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
@@ -27,10 +29,8 @@ from ..utils import logger
 # Module-level convenience helper
 # ---------------------------------------------------------------------------
 
-DEFAULT_STORE_ROOT = Path.home() / ".atlas" / "index"
-
+DEFAULT_STORE_ROOT = Path(os.environ.get("ATLAS_HOME", Path.home() / ".atlas")) / "index"
 COLLECTION_NAME = "video_chat"
-
 ChatRole = Literal["user", "assistant"]
 
 
@@ -153,7 +153,7 @@ class VideoChat(BaseCollection):
                 topk=min(max(last_n * 10, 200), 1024),
             )
         except Exception as e:
-            logger.error(f"Error fetching chat history from zvec: {e}")
+            logger.error("Error fetching chat history from zvec: %s", e)
             return []
 
         messages = []
@@ -273,6 +273,7 @@ class VideoChat(BaseCollection):
         ]
 
 
+@lru_cache(maxsize=16)
 def default_video_chat(embedding_dim=768) -> VideoChat:
     """Return a VideoChat object"""
     return VideoChat(

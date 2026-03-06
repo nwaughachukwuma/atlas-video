@@ -4,16 +4,32 @@ Pytest configuration and shared fixtures for Atlas tests
 
 import json
 import sys
+import warnings
+from contextlib import ExitStack
+from importlib import import_module
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from src.atlas.utils import VideoAttrAnalysis
 from src.atlas.video_processor import VideoDescription, VideoProcessorResult, compile_transcript
 
+from .helpers import async_gen
+
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+
+def _has_zvec() -> bool:
+    try:
+        import zvec  # noqa: F401
+    except ModuleNotFoundError:
+        return False
+    return True
+
+
+ZVEC_AVAILABLE = _has_zvec()
 
 
 @pytest.fixture
@@ -95,10 +111,22 @@ def mock_embedding():
 @pytest.fixture
 def mock_gemini_client():
     """Mock the Gemini client"""
-    with patch("atlas.gemini_client.GeminiClient") as mock:
-        mock_instance = MagicMock()
-        mock.get_client.return_value = mock_instance
-        yield mock_instance
+    with patch("atlas.gemini_client.gemini_client") as mock:
+        yield mock
+
+
+@pytest.fixture
+def mock_gemini_client_with_chunks(mock_gemini_client):
+    """Fixture to create a mock Gemini client that yields specified chunks."""
+
+    def _factory(chunks):
+        mock_stream = async_gen(*chunks)
+        mock_aclient = MagicMock()
+        mock_aclient.models.generate_content_stream = AsyncMock(return_value=mock_stream)
+        mock_gemini_client.aio = mock_aclient
+        return mock_gemini_client
+
+    return _factory
 
 
 @pytest.fixture
@@ -112,13 +140,35 @@ def mock_groq_client():
 
 def pytest_collection_modifyitems(config, items):
     """Auto-skip tests marked with @pytest.mark.zvec when zvec is not importable."""
-    try:
-        import zvec  # noqa: F401
-    except ModuleNotFoundError:
+    if not ZVEC_AVAILABLE:
         skip = pytest.mark.skip(reason="zvec native extension not available on this host")
         for item in items:
             if item.get_closest_marker("zvec"):
                 item.add_marker(skip)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def mock_zvec_init_when_unavailable():
+    """Patch BaseCollection init for local hosts where zvec cannot be installed."""
+    if ZVEC_AVAILABLE:
+        yield
+        return
+
+    warnings.warn(
+        "zvec is not installed on this host; zvec-marked tests will be skipped and BaseCollection._init_zvec "
+        "is mocked for host-only unit tests.",
+        RuntimeWarning,
+        stacklevel=1,
+    )
+
+    with ExitStack() as stack:
+        for module_name in ("atlas.vector_store.base", "src.atlas.vector_store.base"):
+            try:
+                module = import_module(module_name)
+            except ModuleNotFoundError:
+                continue
+            stack.enter_context(patch.object(module.BaseCollection, "_init_zvec", return_value=None))
+        yield
 
 
 # Configure pytest-asyncio
@@ -153,3 +203,9 @@ def mock_model_dump():
         return mock
 
     return _factory
+
+
+@pytest.fixture(autouse=True)
+def mock_env_vars(monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY", "test-gemini-api-key")
+    monkeypatch.setenv("GROQ_API_KEY", "test-groq-api-key")

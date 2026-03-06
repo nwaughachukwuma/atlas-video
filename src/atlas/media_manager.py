@@ -81,16 +81,19 @@ class MediaFileManager:
             else:
                 self._content_type = "application/octet-stream"
 
+        except FileNotFoundError as e:
+            if e.filename in ("ffprobe", "ffmpeg"):
+                raise RuntimeError("ffmpeg/ffprobe not found — please install ffmpeg") from e
+            raise e
         except Exception as e:
             logger.error(f"Error probing media file: {e}")
-            self._duration = 0.0
-            self._content_type = "video/mp4"
+            raise e
 
     def _slice_media_file(self, chunk_duration: int, overlap: int = 0) -> list[ChunkSlot]:
         """Slice media file into time slots"""
         duration = self.duration
         if duration <= 0:
-            return []
+            raise RuntimeError(f"Media file '{self.file_path}' has unknown duration. Ensure the file is a valid video.")
 
         slots: list[ChunkSlot] = []
         start = 0.0

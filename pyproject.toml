@@ -67,10 +67,10 @@ Repository = "https://github.com/nwaughachukwuma/atlas-video"
 Issues = "https://github.com/nwaughachukwuma/atlas-video/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/atlas"]
+packages = ["src/atlas", "src/ui"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src/atlas", "README.md", "LICENSE"]
+include = ["src/atlas", "src/ui", "README.md", "LICENSE"]
 
 [tool.ruff]
 line-length = 120

@@ -15,7 +15,9 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
@@ -32,8 +34,7 @@ if TYPE_CHECKING:
 # ---------------------------------------------------------------------------
 # Module-level convenience functions
 # ---------------------------------------------------------------------------
-
-DEFAULT_STORE_ROOT = Path.home() / ".atlas" / "index"
+DEFAULT_STORE_ROOT = Path(os.environ.get("ATLAS_HOME", Path.home() / ".atlas")) / "index"
 COLLECTION_NAME = "video_index"
 DEFAULT_EMBEDDING_CONCURRENCY = 10
 
@@ -158,7 +159,7 @@ class VideoIndex(BaseCollection):
         try:
             results = self.collection.query(filter="video_id is not null", topk=1_000)
         except Exception as e:
-            logger.error(f"Error listing videos from zvec: {e}")
+            logger.error("Error listing videos from zvec: %s", e)
             return []
 
         videos: dict[str, str] = {}  # video_id → earliest indexed_at
@@ -378,6 +379,7 @@ class VideoIndex(BaseCollection):
             logger.error(f"Error deleting video_index doc {doc_id}: {e}")
 
 
+@lru_cache(maxsize=16)
 def default_video_index(embedding_dim: int = 768) -> VideoIndex:
     """Return a VideoIndex object"""
     return VideoIndex(
@@ -422,13 +424,13 @@ async def index_video(
     async with VideoProcessor(config) as processor:
         result = await processor.process(on_segment)
 
-    vi = default_video_index(embedding_dim)
-    vi.col_path.mkdir(parents=True, exist_ok=True)
+        vi = default_video_index(embedding_dim)
+        vi.col_path.mkdir(parents=True, exist_ok=True)
 
-    video_id = uuid(16)
-    indexed = await vi.index_video_result(result, video_id=video_id)
+        video_id = uuid(16)
+        indexed = await vi.index_video_result(result, video_id=video_id)
 
-    return video_id, indexed, result
+        return video_id, indexed, result
 
 
 async def search_video(
