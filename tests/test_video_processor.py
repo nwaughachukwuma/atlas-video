@@ -87,18 +87,10 @@ class TestVideoProcessorResult:
 class TestVideoProcessor:
     """Tests for VideoProcessor class"""
 
-    def test_initialization(
-        self,
-        tmp_path,
-        mock_gemini_client,
-        monkeypatch,
-    ):
+    def test_initialization(self, tmp_path, mock_gemini_client):
         """Test VideoProcessor initialization"""
         video_path = tmp_path / "test_video.mp4"
         video_path.touch()
-
-        # Mock Gemini client to avoid API key requirement
-        monkeypatch.setenv("GEMINI_API_KEY", "test-api-key")
 
         config = VideoProcessorConfig(video_path=str(video_path))
         processor = VideoProcessor(config)
@@ -108,13 +100,10 @@ class TestVideoProcessor:
         assert processor.overlap == 1
 
     @pytest.mark.asyncio
-    async def test_context_manager(self, tmp_path, mock_gemini_client, monkeypatch):
+    async def test_context_manager(self, tmp_path, mock_gemini_client):
         """Test VideoProcessor as context manager"""
         video_path = tmp_path / "test_video.mp4"
         video_path.touch()
-
-        # Mock Gemini client to avoid API key requirement
-        monkeypatch.setenv("GEMINI_API_KEY", "test-api-key")
 
         config = VideoProcessorConfig(video_path=str(video_path))
         async with VideoProcessor(config) as processor:

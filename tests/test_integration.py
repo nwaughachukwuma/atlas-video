@@ -54,9 +54,7 @@ class TestVideoIndexIntegration:
 
     @pytest.mark.zvec
     @pytest.mark.asyncio
-    async def test_index_and_search_flow(self, temp_col_path, sample_video_result: VideoProcessorResult, monkeypatch):
-        monkeypatch.setenv("GEMINI_API_KEY", "test-api-key")
-
+    async def test_index_and_search_flow(self, temp_col_path, sample_video_result: VideoProcessorResult):
         vi = VideoIndex(col_path=temp_col_path)
         video_id = "test_video_id_001"
         mock_embedding = [0.1] * 768
@@ -85,14 +83,7 @@ class TestVideoProcessorIntegration:
         return str(video_path)
 
     @pytest.mark.asyncio
-    async def test_processor_config_flow(
-        self,
-        sample_video_path,
-        mock_gemini_client,
-        monkeypatch,
-    ):
-        monkeypatch.setenv("GEMINI_API_KEY", "test-api-key")
-
+    async def test_processor_config_flow(self, sample_video_path, mock_gemini_client):
         config = VideoProcessorConfig(
             video_path=sample_video_path,
             chunk_duration=5,
@@ -106,14 +97,7 @@ class TestVideoProcessorIntegration:
         assert processor.overlap == 1
 
     @pytest.mark.asyncio
-    async def test_chunk_slicing_with_overlap(
-        self,
-        sample_video_path,
-        mock_gemini_client,
-        monkeypatch,
-    ):
-        monkeypatch.setenv("GEMINI_API_KEY", "test-api-key")
-
+    async def test_chunk_slicing_with_overlap(self, sample_video_path, mock_gemini_client):
         config = VideoProcessorConfig(
             video_path=sample_video_path,
             chunk_duration=5,
