@@ -296,9 +296,24 @@ class TestVideoIndex:
 
 
 class TestBaseCollectionHelpers:
+    def test_get_or_create_collection_creates_for_empty_existing_directory(self, tmp_path):
+        collection_path = tmp_path / "video_index"
+        collection_path.mkdir()
+        fake_zvec = MagicMock()
+        created = MagicMock()
+        fake_zvec.create_and_open.return_value = created
+
+        with patch.dict("sys.modules", {"zvec": fake_zvec}):
+            result = get_or_create_collection(str(collection_path), MagicMock())
+
+        assert result is created
+        fake_zvec.open.assert_not_called()
+        fake_zvec.create_and_open.assert_called_once()
+
     def test_get_or_create_collection_raises_without_deleting_existing_path(self, tmp_path):
         collection_path = tmp_path / "video_index"
         collection_path.mkdir()
+        (collection_path / "existing").write_text("initialized")
         fake_zvec = MagicMock()
         fake_zvec.open.side_effect = RuntimeError("Can't lock read-write collection")
 

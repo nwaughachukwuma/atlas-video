@@ -44,7 +44,7 @@ def get_or_create_collection(path: str, schema: "CollectionSchema") -> "Collecti
     from ..logger import logger
 
     p = Path(path)
-    if not p.exists():
+    if not p.exists() or (p.is_dir() and not any(p.iterdir())):
         return zvec.create_and_open(path=path, schema=schema)
     try:
         return zvec.open(path=path)
@@ -141,7 +141,7 @@ class BaseCollection(ABC):
     def collection(self) -> "Collection":
         """Lazily open or create the zvec collection on first access."""
         if self._collection is None:
-            self.col_path.mkdir(parents=True, exist_ok=True)
+            self.col_path.parent.mkdir(parents=True, exist_ok=True)
             self._collection = get_shared_collection(
                 str(self.col_path),
                 self._build_schema(),
