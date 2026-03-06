@@ -15,21 +15,22 @@
     ChevronDownIcon,
   } from "lucide-svelte";
   import { onDestroy, onMount } from "svelte";
+  import { marked } from "marked";
   import { chatStream, listChat } from "../lib/api.ts";
   import type { ChatMessage, RawChatMessage } from "../lib/types.ts";
 
   let { videoId }: Props = $props();
 
-  let isOpen: boolean = $state(false);
-  let messages: ChatMessage[] = $state([]);
-  let query: string = $state("");
-  let streaming: boolean = $state(false);
-  let streamingContent: string = $state("");
-  let ctrl: AbortController | null = $state(null);
+  let isOpen = $state(false);
+  let messages = $state<ChatMessage[]>([]);
+  let query = $state("");
+  let streaming = $state(false);
+  let streamingContent = $state("");
 
-  let listEl: HTMLDivElement | null = $state(null);
-  let textareaEl: HTMLTextAreaElement | null = $state(null);
-  let bottomRef: HTMLDivElement | null = $state(null);
+  let ctrl = $state<AbortController | null>(null);
+  let listEl = $state<HTMLDivElement | null>(null);
+  let textareaEl = $state<HTMLTextAreaElement | null>(null);
+  let bottomRef = $state<HTMLDivElement | null>(null);
 
   const STORAGE_KEY = $derived(`atlas_chat_${videoId}`);
 
@@ -99,7 +100,6 @@
     }
   });
 
-  // Scroll to bottom when messages or streaming content change
   $effect(() => {
     if (messages || streamingContent) {
       scrollBottom();
@@ -164,7 +164,7 @@
 
 <!-- Floating Panel -->
 <div
-  class="fixed bottom-22 right-6 z-50 w-88 min-h-64 flex flex-col bg-surface border border-line rounded-2xl shadow-xl transition-all duration-200 origin-bottom-right {isOpen
+  class="fixed bottom-22 right-6 z-50 w-96 min-h-64 flex flex-col bg-surface border border-line rounded-2xl shadow-xl transition-all duration-200 origin-bottom-right {isOpen
     ? 'opacity-100 scale-100 pointer-events-auto'
     : 'opacity-0 scale-95 translate-y-2.5 pointer-events-none'}"
   style="max-height: min(32rem, calc(100vh - 8rem));"
@@ -200,12 +200,16 @@
     {#each messages as m (m.text + m.role)}
       <div class="flex {m.role === 'user' ? 'justify-end' : 'justify-start'}">
         <div
-          class="max-w-[85%] px-3.5 py-2.5 text-sm leading-snug whitespace-pre-wrap wrap-break-word rounded-2xl {m.role ===
+          class="max-w-[85%] px-3.5 py-2.5 text-sm leading-snug rounded-2xl {m.role ===
           'user'
-            ? 'bg-cobalt text-white rounded-br-sm'
-            : 'bg-surface-alt text-ink border border-line rounded-bl-sm'}"
+            ? 'bg-cobalt text-white rounded-br-sm whitespace-pre-wrap wrap-break-word'
+            : 'bg-surface-alt text-ink border border-line rounded-bl-sm prose prose-sm max-w-none'}"
         >
-          {m.text}
+          {#if m.role === "assistant"}
+            {@html marked.parse(m.text)}
+          {:else}
+            {m.text}
+          {/if}
         </div>
       </div>
     {/each}
@@ -214,9 +218,9 @@
     {#if streaming && streamingContent}
       <div class="flex justify-start">
         <div
-          class="max-w-[85%] px-3.5 py-2.5 text-sm leading-snug whitespace-pre-wrap wrap-break-word rounded-2xl bg-surface-alt text-ink border border-line rounded-bl-sm"
+          class="max-w-[85%] px-3.5 py-2.5 text-sm leading-snug rounded-2xl bg-surface-alt text-ink border border-line rounded-bl-sm prose prose-sm max-w-none"
         >
-          {streamingContent}
+          {@html marked.parse(streamingContent)}
         </div>
       </div>
     {/if}

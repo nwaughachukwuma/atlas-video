@@ -33,7 +33,6 @@ if TYPE_CHECKING:
 # ---------------------------------------------------------------------------
 # Module-level convenience functions
 # ---------------------------------------------------------------------------
-
 DEFAULT_STORE_ROOT = Path(os.environ.get("ATLAS_HOME", Path.home() / ".atlas")) / "index"
 COLLECTION_NAME = "video_index"
 DEFAULT_EMBEDDING_CONCURRENCY = 10
@@ -159,7 +158,7 @@ class VideoIndex(BaseCollection):
         try:
             results = self.collection.query(filter="video_id is not null", topk=1_000)
         except Exception as e:
-            logger.error(f"Error listing videos from zvec: {e}")
+            logger.error("Error listing videos from zvec: %s", e)
             return []
 
         videos: dict[str, str] = {}  # video_id → earliest indexed_at

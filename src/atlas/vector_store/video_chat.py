@@ -152,7 +152,7 @@ class VideoChat(BaseCollection):
                 topk=min(max(last_n * 10, 200), 1024),
             )
         except Exception as e:
-            logger.error(f"Error fetching chat history from zvec: {e}")
+            logger.error("Error fetching chat history from zvec: %s", e)
             return []
 
         messages = []
@@ -272,7 +272,7 @@ class VideoChat(BaseCollection):
         ]
 
 
-def default_video_chat(embedding_dim=768) -> VideoChat:
+def default_video_chat(embedding_dim: int = 768) -> VideoChat:
     """Return a VideoChat object"""
     return VideoChat(
         col_path=DEFAULT_STORE_ROOT / COLLECTION_NAME,

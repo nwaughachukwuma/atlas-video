@@ -242,10 +242,6 @@ def create_app() -> FastAPI:
     async def chat(payload: ChatRequest) -> StreamingResponse:
         from .chat_handler import chat_with_video
 
-        # async def sse_generator():
-        #     async for chunk in chat_with_video(payload.video_id, payload.query):
-        #         escaped = chunk.replace("\n", "\\n")
-        #         yield f"{escaped}\n\n"
         generator = chat_with_video(payload.video_id, payload.query)
         return StreamingResponse(generator, media_type="text/event-stream")
 

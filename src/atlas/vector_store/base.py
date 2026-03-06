@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING, Any, List, Optional
 from ..uuid import uuid
 
 if TYPE_CHECKING:
-    from zvec import Collection
+    from zvec import Collection, CollectionSchema
 
 
 # ---------------------------------------------------------------------------
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 # ---------------------------------------------------------------------------
 
 
-def get_or_create_collection(path: str, schema) -> "Collection":
+def get_or_create_collection(path: str, schema: "CollectionSchema") -> "Collection":
     """Open an existing zvec collection or create a new one at *path*."""
     import zvec
 
@@ -93,7 +93,7 @@ class BaseCollection(ABC):
     # ------------------------------------------------------------------
 
     @abstractmethod
-    def _build_schema(self):
+    def _build_schema(self) -> "CollectionSchema":
         """Return the zvec CollectionSchema for this collection."""
 
     # ------------------------------------------------------------------

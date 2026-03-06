@@ -56,7 +56,6 @@ export interface SearchResult {
   video_id: string;
   score?: number;
   content?: string;
-  transcript?: string;
   start_time?: number;
   end_time?: number;
 }

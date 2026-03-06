@@ -173,7 +173,11 @@
           <summary class="cursor-pointer text-[0.88rem] text-muted">
             Full result JSON
           </summary>
-          <pre>{JSON.stringify(result.result, null, 2)}</pre>
+          <pre class="max-h-96 overflow-y-auto m-0">{JSON.stringify(
+              result.result,
+              null,
+              2,
+            )}</pre>
         </details>
       {/if}
     </div>

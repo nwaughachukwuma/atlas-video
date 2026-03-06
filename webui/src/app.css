@@ -183,6 +183,26 @@
     letter-spacing: 0.08em;
     border: 1px solid;
   }
+  .badge-pending {
+    border-color: var(--color-muted);
+    color: var(--color-muted);
+  }
+  .badge-running {
+    border-color: var(--color-cobalt);
+    color: var(--color-cobalt);
+  }
+  .badge-completed {
+    border-color: var(--color-success);
+    color: var(--color-success);
+  }
+  .badge-failed {
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+  }
+  .badge-timeout {
+    border-color: var(--color-warning);
+    color: var(--color-warning);
+  }
 
   /* Feedback boxes */
 

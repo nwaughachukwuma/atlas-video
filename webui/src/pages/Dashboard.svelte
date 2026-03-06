@@ -66,7 +66,7 @@
   );
   const totalTasks: number = $derived(queueData?.tasks?.length ?? 0);
 
-  function badgeClass(status: string): string {
+  function badgeClass(status: string) {
     return `badge badge-${status}`;
   }
 
