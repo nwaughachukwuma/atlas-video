@@ -203,3 +203,9 @@ def mock_model_dump():
         return mock
 
     return _factory
+
+
+@pytest.fixture(autouse=True)
+def mock_env_vars(monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY", "test-gemini-api-key")
+    monkeypatch.setenv("GROQ_API_KEY", "test-groq-api-key")

@@ -164,18 +164,13 @@ class TestEndToEnd:
     """End-to-end tests for complete workflows"""
 
     @pytest.fixture
-    def mock_env_vars(self, monkeypatch):
-        monkeypatch.setenv("GEMINI_API_KEY", "test-gemini-key")
-        monkeypatch.setenv("GROQ_API_KEY", "test-groq-key")
-
-    @pytest.fixture
     def sample_video(self, tmp_path):
         video_path = tmp_path / "sample.mp4"
         video_path.touch()
         return str(video_path)
 
     @pytest.mark.asyncio
-    async def test_get_video_transcript_workflow(self, sample_video, mock_env_vars):
+    async def test_get_video_transcript_workflow(self, sample_video):
         with patch("atlas.transcript.ProcessTranscript") as mock_transcript:
             mock_instance = MagicMock()
             mock_instance.process = AsyncMock(return_value="Test transcript content")
@@ -188,7 +183,7 @@ class TestEndToEnd:
             result = await get_video_transcript(sample_video)
             assert isinstance(result, str)
 
-    def test_package_imports(self, mock_env_vars):
+    def test_package_imports(self):
         import atlas
 
         assert atlas.__version__ is not None
