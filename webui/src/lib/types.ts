@@ -36,17 +36,25 @@ export interface Task {
   command: string;
   label: string;
   status: TaskStatus;
+  run_type?: "queued" | "direct";
   created_at?: string;
   started_at?: string;
   finished_at?: string;
   duration?: string | number;
   error?: string;
   output_path?: string;
+  requested_output_path?: string;
+  benchmark_path?: string;
+  benchmark_text?: string;
+  result?: unknown;
   /** Present on some queue responses that mirror the task */
   task_id?: string;
 }
 
 export interface QueueListResponse {
+  status_filter?: TaskStatus | null;
+  command_filter?: string | null;
+  run_type_filter?: "queued" | "direct" | null;
   tasks: Task[];
 }
 
@@ -137,6 +145,11 @@ export interface TaskQueuedResult {
   task_id?: string;
   id?: string;
   error?: string;
+  run_type?: "queued" | "direct";
+  command?: string;
+  output_path?: string;
+  requested_output_path?: string;
+  benchmark_path?: string;
 }
 
 export interface TranscribeResult extends TaskQueuedResult {

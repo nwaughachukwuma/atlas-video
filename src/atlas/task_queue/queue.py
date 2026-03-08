@@ -22,6 +22,7 @@ from .config import (
     TASK_TIMEOUT,
     TRANSCRIBE_CONCURRENCY,
 )
+from .helpers import worker_log_file_for
 from .store import TaskStore
 from ..logger import get_logger
 
@@ -157,7 +158,7 @@ class TaskQueue:
 
     def _spawn_worker(self, task_id: str) -> None:
         """Launch ``python -m atlas.task_queue.worker <task_id>`` as a detached process."""
-        log_file = RESULTS_DIR / task_id / "worker.log"
+        log_file = worker_log_file_for(task_id)
 
         kwargs: dict[str, Any] = {
             "stdin": subprocess.DEVNULL,

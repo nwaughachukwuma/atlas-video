@@ -131,8 +131,20 @@ export const health = (): Promise<HealthResponse> =>
 
 export const queueList = (
   status: string | null = null,
+  command: string | null = null,
+  runType: "queued" | "direct" | null = null,
 ): Promise<QueueListResponse> =>
-  get<QueueListResponse>("/queue/list" + (status ? `?status=${status}` : ""));
+  get<QueueListResponse>(
+    "/queue/list" +
+      (() => {
+        const params = new URLSearchParams();
+        if (status) params.set("status", status);
+        if (command) params.set("command", command);
+        if (runType) params.set("run_type", runType);
+        const query = params.toString();
+        return query ? `?${query}` : "";
+      })(),
+  );
 
 export const queueStatus = (id: string): Promise<Task> =>
   get<Task>(`/queue/status/${id}`);

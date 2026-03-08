@@ -89,6 +89,7 @@ def _run_command(func, args: argparse.Namespace, *, tmp_dir: Path | None = None)
 
     stdout = StringIO()
     stderr = StringIO()
+    returned: Any = None
 
     # Force the shared CLI console to write to our stderr buffer so that Rich
     # progress bars / spinners don't pollute stdout (which we parse as JSON).
@@ -96,7 +97,7 @@ def _run_command(func, args: argparse.Namespace, *, tmp_dir: Path | None = None)
     try:
         with redirect_stdout(stdout), redirect_stderr(stderr):
             try:
-                func(args)
+                returned = func(args)
             except SystemExit as exc:
                 code = exc.code if isinstance(exc.code, int) else 1
                 http_status = 500 if code == 1 else 400
@@ -113,6 +114,9 @@ def _run_command(func, args: argparse.Namespace, *, tmp_dir: Path | None = None)
         cli_module._console = None
         if tmp_dir and tmp_dir.exists():
             shutil.rmtree(tmp_dir, ignore_errors=True)
+
+    if returned is not None:
+        return returned
 
     raw = stdout.getvalue()
     try:
@@ -296,13 +300,17 @@ def create_app() -> FastAPI:
     @app.get("/queue/list")
     def queue_list(
         status: Literal["pending", "running", "completed", "failed", "timeout"] | None = None,
+        command: Literal["transcribe", "extract", "index"] | None = None,
+        run_type: Literal["queued", "direct"] | None = None,
     ) -> dict[str, Any]:
         from .task_queue.store import TaskStore
 
         store = TaskStore()
-        tasks = store.list_all(status)
+        tasks = store.list_all(status, command=command, run_type=run_type)
         return {
             "status_filter": status,
+            "command_filter": command,
+            "run_type_filter": run_type,
             "count": len(tasks),
             "tasks": tasks,
         }
@@ -310,7 +318,7 @@ def create_app() -> FastAPI:
     @app.get("/queue/status/{task_id}")
     def queue_status(task_id: str) -> dict[str, Any]:
         from .task_queue.commands import _duration_str
-        from .task_queue.config import RESULTS_DIR
+        from .task_queue import deserialize_result, get_result_artifacts
         from .task_queue.store import TaskStore
 
         store = TaskStore()
@@ -320,16 +328,18 @@ def create_app() -> FastAPI:
 
         output: dict[str, Any] = dict(task)
         output["duration"] = _duration_str(task.get("started_at"), task.get("finished_at")) or None
-
-        results_dir = RESULTS_DIR / task_id
-        output_file = results_dir / "output.json"
-        benchmark_file = results_dir / "benchmark.txt"
-
-        if output_file.exists():
-            output["output_path"] = str(output_file)
-
-        if benchmark_file.exists():
-            output["benchmark_path"] = str(benchmark_file)
+        requested_output_path = output.get("output_path")
+        artifacts = get_result_artifacts(task)
+        if requested_output_path:
+            output["requested_output_path"] = requested_output_path
+        if artifacts["result_path"]:
+            output["output_path"] = artifacts["result_path"]
+        if artifacts["benchmark_path"]:
+            output["benchmark_path"] = artifacts["benchmark_path"]
+        if artifacts["result_text"] is not None:
+            output["result"] = deserialize_result(artifacts["result_text"])
+        if artifacts["benchmark_text"] is not None:
+            output["benchmark_text"] = artifacts["benchmark_text"]
 
         return output
 

@@ -677,6 +677,44 @@ class TestCmdTranscribe:
         ):
             cmd_transcribe(self._args(str(video)))
 
+    def test_success_persists_direct_run(self, tmp_path, progress_ctx, monkeypatch):
+        from atlas.task_queue.store import TaskStore
+
+        results_dir = tmp_path / "results"
+        video = tmp_path / "v.mp4"
+        video.touch()
+        store = TaskStore(db_path=tmp_path / "q.db")
+        monkeypatch.setattr("atlas.task_queue.helpers.RESULTS_DIR", results_dir)
+
+        def fake_start_direct_run(command, video_path, output_path, benchmark):
+            store.add("run123", command, f"{command} {video_path.name}", output_path, benchmark, run_type="direct")
+            store.mark_running("run123")
+            return "run123", store
+
+        monkeypatch.setattr("atlas.cli.cmd_media._start_direct_run", fake_start_direct_run)
+
+        with (
+            patch("atlas.cli.cmd_media.validate_api_keys"),
+            patch("atlas.cli.cmd_media.make_progress", return_value=progress_ctx),
+            patch(
+                "atlas.cli.cmd_media.asyncio.run",
+                side_effect=mock_asyncio_run(return_value="Hello world transcript"),
+            ),
+        ):
+            payload = cmd_transcribe(self._args(str(video)))
+
+        task = store.get("run123")
+        assert payload is not None
+        assert payload["id"] == "run123"
+        assert payload["output_path"] == str(results_dir / "run123" / "output.json")
+        assert task is not None
+        assert task["status"] == "completed"
+        assert task["run_type"] == "direct"
+        assert json.loads((results_dir / "run123" / "output.json").read_text()) == {
+            "transcript": "Hello world transcript",
+            "format": "text",
+        }
+
     def test_success_saves_to_file(self, tmp_path):
         video = tmp_path / "v.mp4"
         video.touch()
@@ -848,6 +886,28 @@ class TestTaskStore:
         assert ctask is not None
         assert ctask["status"] == "completed"
 
+    def test_status_transitions_store_result_metadata(self, tmp_path):
+        from atlas.task_queue import TaskStore
+
+        store = TaskStore(db_path=tmp_path / "test.db")
+        store.add("t1", "extract", "extract v.mp4", run_type="direct")
+        store.mark_running("t1")
+        store.mark_completed(
+            "t1",
+            result_text='{"ok": true}',
+            result_path="/tmp/output.json",
+            benchmark_text="Benchmark Summary",
+            benchmark_path="/tmp/benchmark.txt",
+        )
+
+        task = store.get("t1")
+        assert task is not None
+        assert task["run_type"] == "direct"
+        assert task["result_text"] == '{"ok": true}'
+        assert task["result_path"] == "/tmp/output.json"
+        assert task["benchmark_text"] == "Benchmark Summary"
+        assert task["benchmark_path"] == "/tmp/benchmark.txt"
+
     def test_mark_failed(self, tmp_path):
         from atlas.task_queue import TaskStore
 
@@ -886,6 +946,17 @@ class TestTaskStore:
         running = store.list_all("running")
         assert len(running) == 1
         assert running[0]["id"] == "t1"
+
+    def test_list_all_can_filter_by_command_and_run_type(self, tmp_path):
+        from atlas.task_queue import TaskStore
+
+        store = TaskStore(db_path=tmp_path / "test.db")
+        store.add("t1", "extract", "extract v1.mp4", run_type="queued")
+        store.add("t2", "transcribe", "transcribe v2.mp4", run_type="direct")
+
+        direct_transcribes = store.list_all(command="transcribe", run_type="direct")
+        assert len(direct_transcribes) == 1
+        assert direct_transcribes[0]["id"] == "t2"
 
     def test_active_count(self, tmp_path):
         from atlas.task_queue import TaskStore
@@ -1082,6 +1153,8 @@ class TestCmdTranscribeQueued:
         )
 
         with patch("atlas.cli.cmd_media.validate_api_keys"):
-            cmd_transcribe(args)  # should queue and return without error
+            payload = cmd_transcribe(args)  # should queue and return without error
 
         mock_queue.submit.assert_called_once()
+        assert payload is not None
+        assert payload["task_id"] == "test1234"

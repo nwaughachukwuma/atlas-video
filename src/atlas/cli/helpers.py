@@ -143,23 +143,43 @@ def print_queued_info(
     benchmark: bool = False,
 ) -> None:
     """Print standardised information about a queued task."""
-    from ..task_queue import RESULTS_DIR
-
-    results_dir = RESULTS_DIR / task_id
+    from ..task_queue import benchmark_file_for, output_file_for, worker_log_file_for
 
     console.print("\n[bold green]✓ Task queued[/bold green]")
     console.print(f"  [cyan]Task ID:[/cyan]    {task_id}")
     console.print(f"  [cyan]Command:[/cyan]    {command}")
-    console.print(f"  [cyan]Output:[/cyan]     {results_dir / 'output.json'}")
+    console.print(f"  [cyan]Output:[/cyan]     {output_file_for(task_id)}")
     if output_path:
         console.print(f"  [cyan]Also at:[/cyan]    {output_path}")
     if benchmark:
-        console.print(f"  [cyan]Benchmark:[/cyan]  {results_dir / 'benchmark.txt'}")
-    console.print(f"  [cyan]Worker log:[/cyan] {results_dir / 'worker.log'}")
+        console.print(f"  [cyan]Benchmark:[/cyan]  {benchmark_file_for(task_id)}")
+    console.print(f"  [cyan]Worker log:[/cyan] {worker_log_file_for(task_id)}")
     console.print(f"\n  [dim]Track this task:[/dim]  atlas queue status --task-id {task_id}")
     console.print("  [dim]View all tasks:[/dim]   atlas queue list")
     console.print("  [dim]System notification will fire on completion/failure.[/dim]")
     console.print("  [dim]You can keep using Atlas for new tasks.[/dim]")
+
+
+def print_saved_run_info(
+    console: "Console",
+    run_id: str,
+    command: str,
+    *,
+    output_path: str,
+    requested_output_path: Optional[str] = None,
+    benchmark_path: Optional[str] = None,
+) -> None:
+    """Print standardised information for a direct run persisted to disk."""
+    console.print("\n[bold green]✓ Result persisted[/bold green]")
+    console.print(f"  [cyan]Run ID:[/cyan]     {run_id}")
+    console.print(f"  [cyan]Command:[/cyan]    {command}")
+    console.print(f"  [cyan]Output:[/cyan]     {output_path}")
+    if requested_output_path:
+        console.print(f"  [cyan]Also at:[/cyan]    {requested_output_path}")
+    if benchmark_path:
+        console.print(f"  [cyan]Benchmark:[/cyan]  {benchmark_path}")
+    console.print(f"\n  [dim]Inspect this run:[/dim] atlas queue status --task-id {run_id}")
+    console.print("  [dim]Browse saved runs:[/dim] atlas queue list")
 
 
 def print_benchmark_summary() -> None:

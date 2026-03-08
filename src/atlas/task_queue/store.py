@@ -30,9 +30,22 @@ CREATE TABLE IF NOT EXISTS tasks (
     finished_at TEXT,
     error       TEXT,
     output_path TEXT,
-    benchmark   INTEGER NOT NULL DEFAULT 0
+    benchmark   INTEGER NOT NULL DEFAULT 0,
+    run_type    TEXT NOT NULL DEFAULT 'queued',
+    result_text TEXT,
+    result_path TEXT,
+    benchmark_text TEXT,
+    benchmark_path TEXT
 );
 """
+
+_MIGRATION_COLUMNS = {
+    "run_type": "TEXT NOT NULL DEFAULT 'queued'",
+    "result_text": "TEXT",
+    "result_path": "TEXT",
+    "benchmark_text": "TEXT",
+    "benchmark_path": "TEXT",
+}
 
 
 class TaskStore:
@@ -43,7 +56,7 @@ class TaskStore:
         self._local = threading.local()  # per-instance thread-local storage
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         with self._conn() as conn:
-            conn.executescript(_DDL)
+            self._ensure_schema(conn)
 
     # ── connection helpers ────────────────────────────────────────────
 
@@ -54,8 +67,17 @@ class TaskStore:
             conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
             conn.row_factory = sqlite3.Row
             conn.execute("PRAGMA journal_mode=WAL")
+            self._ensure_schema(conn)
             self._local.conn = conn
         return conn
+
+    def _ensure_schema(self, conn: sqlite3.Connection) -> None:
+        """Create and migrate the tasks table in place when new columns are introduced."""
+        conn.executescript(_DDL)
+        columns = {row["name"] for row in conn.execute("PRAGMA table_info(tasks)").fetchall()}
+        for name, ddl in _MIGRATION_COLUMNS.items():
+            if name not in columns:
+                conn.execute(f"ALTER TABLE tasks ADD COLUMN {name} {ddl}")
 
     @contextmanager
     def _tx(self):
@@ -77,13 +99,14 @@ class TaskStore:
         label: str,
         output_path: Optional[str] = None,
         benchmark: bool = False,
+        run_type: str = "queued",
     ) -> None:
         """Insert a new task row."""
         with self._tx() as conn:
             conn.execute(
-                "INSERT INTO tasks (id, command, label, status, created_at, output_path, benchmark)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (task_id, command, label, TaskStatus.PENDING, now_iso(), output_path, int(benchmark)),
+                "INSERT INTO tasks (id, command, label, status, created_at, output_path, benchmark, run_type)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (task_id, command, label, TaskStatus.PENDING, now_iso(), output_path, int(benchmark), run_type),
             )
 
     def mark_running(self, task_id: str) -> None:
@@ -94,30 +117,71 @@ class TaskStore:
                 (TaskStatus.RUNNING, now_iso(), task_id),
             )
 
-    def mark_completed(self, task_id: str) -> None:
+    def mark_completed(
+        self,
+        task_id: str,
+        *,
+        result_text: str | None = None,
+        result_path: str | None = None,
+        benchmark_text: str | None = None,
+        benchmark_path: str | None = None,
+    ) -> None:
         """Transition task to completed; trim old records."""
         with self._tx() as conn:
             conn.execute(
-                "UPDATE tasks SET status=?, finished_at=? WHERE id=?",
-                (TaskStatus.COMPLETED, now_iso(), task_id),
+                "UPDATE tasks SET status=?, finished_at=?, result_text=?, result_path=?, benchmark_text=?, benchmark_path=?"
+                " WHERE id=?",
+                (TaskStatus.COMPLETED, now_iso(), result_text, result_path, benchmark_text, benchmark_path, task_id),
             )
             self._trim(conn)
 
-    def mark_failed(self, task_id: str, error: str) -> None:
+    def mark_failed(
+        self,
+        task_id: str,
+        error: str,
+        *,
+        result_text: str | None = None,
+        result_path: str | None = None,
+        benchmark_text: str | None = None,
+        benchmark_path: str | None = None,
+    ) -> None:
         """Transition task to failed with error message; trim old records."""
         with self._tx() as conn:
             conn.execute(
-                "UPDATE tasks SET status=?, finished_at=?, error=? WHERE id=?",
-                (TaskStatus.FAILED, now_iso(), error, task_id),
+                "UPDATE tasks SET status=?, finished_at=?, error=?, result_text=?, result_path=?, benchmark_text=?,"
+                " benchmark_path=? WHERE id=?",
+                (
+                    TaskStatus.FAILED,
+                    now_iso(),
+                    error,
+                    result_text,
+                    result_path,
+                    benchmark_text,
+                    benchmark_path,
+                    task_id,
+                ),
             )
             self._trim(conn)
 
-    def mark_timeout(self, task_id: str) -> None:
+    def mark_timeout(
+        self,
+        task_id: str,
+        *,
+        result_text: str | None = None,
+        result_path: str | None = None,
+    ) -> None:
         """Transition task to timeout."""
         with self._tx() as conn:
             conn.execute(
-                "UPDATE tasks SET status=?, finished_at=?, error=? WHERE id=?",
-                (TaskStatus.TIMEOUT, now_iso(), f"Exceeded {TASK_TIMEOUT}s timeout", task_id),
+                "UPDATE tasks SET status=?, finished_at=?, error=?, result_text=?, result_path=? WHERE id=?",
+                (
+                    TaskStatus.TIMEOUT,
+                    now_iso(),
+                    f"Exceeded {TASK_TIMEOUT}s timeout",
+                    result_text,
+                    result_path,
+                    task_id,
+                ),
             )
 
     # ── queries ───────────────────────────────────────────────────────
@@ -127,19 +191,30 @@ class TaskStore:
         row = self._conn().execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
         return dict(row) if row else None
 
-    def list_all(self, status: Optional[str] = None) -> List[dict]:
+    def list_all(
+        self,
+        status: Optional[str] = None,
+        *,
+        command: Optional[str] = None,
+        run_type: Optional[str] = None,
+    ) -> List[dict]:
         """Return all tasks, optionally filtered by *status*."""
+        query = "SELECT * FROM tasks"
+        clauses: list[str] = []
+        values: list[str] = []
         if status:
-            rows = (
-                self._conn()
-                .execute(
-                    "SELECT * FROM tasks WHERE status=? ORDER BY created_at DESC",
-                    (status,),
-                )
-                .fetchall()
-            )
-        else:
-            rows = self._conn().execute("SELECT * FROM tasks ORDER BY created_at DESC").fetchall()
+            clauses.append("status=?")
+            values.append(status)
+        if command:
+            clauses.append("command=?")
+            values.append(command)
+        if run_type:
+            clauses.append("run_type=?")
+            values.append(run_type)
+        if clauses:
+            query += " WHERE " + " AND ".join(clauses)
+        query += " ORDER BY created_at DESC"
+        rows = self._conn().execute(query, values).fetchall()
         return [dict(r) for r in rows]
 
     def get_running(self) -> List[dict]:

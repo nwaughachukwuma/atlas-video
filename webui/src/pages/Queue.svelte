@@ -20,6 +20,8 @@
   let tasks = $state<Task[]>([]);
   let loading = $state(false);
   let statusFilter = $state<TaskStatus | null>(null);
+  let commandFilter = $state<string | null>(null);
+  let runTypeFilter = $state<"queued" | "direct" | null>(null);
 
   const statusOptions: (TaskStatus | null)[] = [
     null,
@@ -29,12 +31,23 @@
     "failed",
     "timeout",
   ];
+  const commandOptions: (string | null)[] = [
+    null,
+    "transcribe",
+    "extract",
+    "index",
+  ];
+  const runTypeOptions: (("queued" | "direct") | null)[] = [
+    null,
+    "queued",
+    "direct",
+  ];
 
   async function fetchTasks() {
     if (loading) return;
 
     loading = true;
-    return queueList(statusFilter)
+    return queueList(statusFilter, commandFilter, runTypeFilter)
       .then((d) => (tasks = d.tasks))
       .catch((e) =>
         toast.error("Error while fetching Queue data", {
@@ -75,31 +88,61 @@
     <QueueTaskId {taskId} {loading} />
   {:else}
     <!-- Task list view -->
-    <h2 class="flex items-center gap-1.5">
-      <ClipboardListIcon
-        size={20}
-        strokeWidth={2}
-        style="display:inline;vertical-align:middle;"
-      /> Task Queue
-    </h2>
-    <p class="text-muted mb-5">Monitor and inspect background tasks.</p>
+      <h2 class="flex items-center gap-1.5">
+        <ClipboardListIcon
+          size={20}
+          strokeWidth={2}
+          style="display:inline;vertical-align:middle;"
+        /> Run History
+      </h2>
+      <p class="text-muted mb-5">
+        Monitor queued work and inspect persisted direct-run results.
+      </p>
 
-    <div class="flex flex-wrap gap-[0.4rem] mb-5">
-      {#each statusOptions as s}
-        <button
-          class={statusFilter === s ? "btn-primary" : "btn-secondary"}
+      <div class="flex flex-wrap gap-[0.4rem] mb-3">
+        {#each statusOptions as s}
+          <button
+            class={statusFilter === s ? "btn-primary" : "btn-secondary"}
           onclick={() => {
             statusFilter = s;
             fetchTasks();
           }}
-        >
-          {s ?? "All"}
-        </button>
-      {/each}
-      <button class="btn-secondary" onclick={fetchTasks} title="Refresh"
+          >
+            {s ?? "All"}
+          </button>
+        {/each}
+      </div>
+
+      <div class="flex flex-wrap gap-[0.4rem] mb-3">
+        {#each commandOptions as c}
+          <button
+            class={commandFilter === c ? "btn-primary" : "btn-secondary"}
+            onclick={() => {
+              commandFilter = c;
+              fetchTasks();
+            }}
+          >
+            {c ?? "All commands"}
+          </button>
+        {/each}
+      </div>
+
+      <div class="flex flex-wrap gap-[0.4rem] mb-5">
+        {#each runTypeOptions as mode}
+          <button
+            class={runTypeFilter === mode ? "btn-primary" : "btn-secondary"}
+            onclick={() => {
+              runTypeFilter = mode;
+              fetchTasks();
+            }}
+          >
+            {mode ?? "All runs"}
+          </button>
+        {/each}
+        <button class="btn-secondary" onclick={fetchTasks} title="Refresh"
         >↻ Refresh</button
-      >
-    </div>
+        >
+      </div>
 
     {#if loading}
       <p class="flex gap-x-2 items-center">
@@ -121,6 +164,9 @@
           >
             <div class="flex items-center gap-2">
               <span class={badgeClass(t.status)}>{t.status}</span>
+              {#if t.run_type}
+                <span class="tag text-[0.78rem]">{t.run_type}</span>
+              {/if}
               <span class="tag text-[0.78rem]">{t.command}</span>
               <span class="text-[0.88rem] flex-1">{t.label}</span>
             </div>

@@ -307,7 +307,7 @@ atlas transcribe video.mp4 --format=srt --output=transcript.srt
 
 ### `atlas extract`
 
-Extract multimodal insights from a video without indexing. Tasks are **queued by default**; use `--no-queue` to run directly and stream results to the terminal in real time.
+Extract multimodal insights from a video without indexing. Tasks are **queued by default**; use `--no-queue` to run directly and stream results to the terminal in real time. Queued and direct runs are both persisted to disk and recorded in SQLite, so you can inspect them later with `atlas queue`.
 
 ```
 atlas extract VIDEO_PATH [OPTIONS]
@@ -354,7 +354,7 @@ atlas extract video.mp4 --include-summary false --benchmark
 
 ### `atlas index`
 
-Index a video for semantic search. Prints a **video_id** on completion — use it to filter searches, start chats, or retrieve data with `get-video`. Tasks are **queued by default**; use `--no-queue` to run directly.
+Index a video for semantic search. Prints a **video_id** on completion — use it to filter searches, start chats, or retrieve data with `get-video`. Tasks are **queued by default**; use `--no-queue` to run directly. Every run is persisted with a run ID and saved output path.
 
 ```
 atlas index VIDEO_PATH [OPTIONS]
@@ -406,7 +406,7 @@ atlas search abc123def456 "the login screen"
 
 ### `atlas transcribe`
 
-Extract a transcript from a video or audio file using Groq Whisper. **Output streams to the terminal in real-time.**
+Extract a transcript from a video or audio file using Groq Whisper. **Output streams to the terminal in real-time.** Direct runs now also receive a persisted run ID plus saved output and benchmark paths.
 
 ```
 atlas transcribe VIDEO_PATH [OPTIONS]
@@ -512,11 +512,12 @@ atlas stats
 
 ### `atlas queue`
 
-Manage the background task queue. Long-running commands (`index`, `extract`) are queued by default; use `--no-queue` on any command to run immediately.
+Manage the background task queue and inspect persisted direct runs. Long-running commands (`index`, `extract`) are queued by default; use `--no-queue` on any command to run immediately.
 
 ```
-atlas queue list                         # list all tasks
+atlas queue list                         # list queued tasks and direct runs
 atlas queue status --task-id TASK_ID     # check status of a specific task
+atlas queue list --command transcribe --run-type direct
 ```
 
 Use `--no-queue` on any command to bypass the queue and run synchronously:

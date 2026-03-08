@@ -218,7 +218,21 @@ class TestQueueListEndpoint:
         body = resp.json()
         assert body["status_filter"] == "running"
         assert body["count"] == 0
-        fake_store.list_all.assert_called_once_with("running")
+        fake_store.list_all.assert_called_once_with("running", command=None, run_type=None)
+
+    def test_queue_list_with_command_and_run_type_filter(self):
+        fake_store = MagicMock()
+        fake_store.list_all.return_value = [{"id": "r1", "command": "transcribe", "run_type": "direct"}]
+
+        with patch("atlas.task_queue.store.TaskStore", return_value=fake_store):
+            client = TestClient(create_app())
+            resp = client.get("/queue/list", params={"command": "transcribe", "run_type": "direct"})
+
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["command_filter"] == "transcribe"
+        assert body["run_type_filter"] == "direct"
+        fake_store.list_all.assert_called_once_with(None, command="transcribe", run_type="direct")
 
 
 class TestQueueStatusEndpoint:
@@ -281,6 +295,8 @@ class TestQueueStatusEndpoint:
         assert body["status"] == "completed"
         assert body["output_path"] == str(output_path)
         assert body["benchmark_path"] == str(benchmark_path)
+        assert body["result"] == {"ok": True, "segments": 3}
+        assert body["benchmark_text"] == "|...|"
 
         # verify the content of output_path
         output_content = json.loads(output_path.read_text())
@@ -324,7 +340,12 @@ class TestMediaPostEndpoints:
         from atlas import server as server_module
 
         def fake_transcribe(args):
-            print(json.dumps({"transcript": "Hello world", "format": args.format}))
+            return {
+                "id": "run123",
+                "transcript": "Hello world",
+                "format": args.format,
+                "output_path": "/tmp/output.json",
+            }
 
         monkeypatch.setattr(server_module, "cmd_transcribe", fake_transcribe)
         client = TestClient(create_app())
@@ -336,8 +357,34 @@ class TestMediaPostEndpoints:
 
         assert resp.status_code == 200
         body = resp.json()
+        assert body["id"] == "run123"
         assert body["transcript"] == "Hello world"
         assert body["format"] == "text"
+        assert body["output_path"] == "/tmp/output.json"
+
+    def test_extract_queued_returns_structured_run_metadata(self, monkeypatch):
+        from atlas import server as server_module
+
+        def fake_extract(args):
+            return {
+                "task_id": "abc123",
+                "id": "abc123",
+                "run_type": "queued",
+                "output_path": "/tmp/queue/abc123/output.json",
+            }
+
+        monkeypatch.setattr(server_module, "cmd_extract", fake_extract)
+        client = TestClient(create_app())
+        resp = client.post(
+            "/extract",
+            files={"video": _fake_video()},
+        )
+
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["task_id"] == "abc123"
+        assert body["run_type"] == "queued"
+        assert body["output_path"] == "/tmp/queue/abc123/output.json"
 
     def test_index_no_queue_returns_json(self, monkeypatch):
         from atlas import server as server_module
