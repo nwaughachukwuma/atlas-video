@@ -1008,8 +1008,10 @@ class TestTaskQueueSubmit:
     def test_submit_returns_task_id(self, tmp_path, monkeypatch):
         from atlas.task_queue import TaskQueue
 
-        # Redirect RESULTS_DIR to tmp
-        monkeypatch.setattr("atlas.task_queue.queue.RESULTS_DIR", tmp_path / "results")
+        # Redirect RESULTS_DIR to tmp in every module that holds a binding
+        results = tmp_path / "results"
+        monkeypatch.setattr("atlas.task_queue.queue.RESULTS_DIR", results)
+        monkeypatch.setattr("atlas.task_queue.helpers.RESULTS_DIR", results)
 
         # Prevent real subprocess spawn
         monkeypatch.setattr("atlas.task_queue.queue.subprocess.Popen", lambda *a, **kw: None)
@@ -1032,6 +1034,7 @@ class TestTaskQueueSubmit:
 
         results_dir = tmp_path / "results"
         monkeypatch.setattr("atlas.task_queue.queue.RESULTS_DIR", results_dir)
+        monkeypatch.setattr("atlas.task_queue.helpers.RESULTS_DIR", results_dir)
         monkeypatch.setattr("atlas.task_queue.queue.subprocess.Popen", lambda *a, **kw: None)
 
         queue = TaskQueue(db_path=tmp_path / "q.db")

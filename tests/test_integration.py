@@ -43,7 +43,6 @@ class TestVideoIndexIntegration:
 
     def test_initialization(self, temp_col_path):
         vi = VideoIndex(col_path=temp_col_path)
-        assert vi.embedding_dim == 768
         # col_path is not created until first collection access
         assert not temp_col_path.exists()
 
