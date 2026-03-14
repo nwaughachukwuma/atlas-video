@@ -17,7 +17,11 @@
   const routes: RouteConfig[] = [
     { path: "/", component: Home },
     { path: "/transcribe", component: Transcribe },
+    { path: "/transcribe/runs/(?<id>[^/]+)", component: Runs },
+    { path: "/transcribe/runs", component: Runs },
     { path: "/extract", component: Extract },
+    { path: "/extract/runs/(?<id>[^/]+)", component: Runs },
+    { path: "/extract/runs", component: Runs },
     { path: "/index", component: Index },
     { path: "/video/(?<id>[^/]+)", component: VideoDetail },
     { path: "/videos", component: Videos },

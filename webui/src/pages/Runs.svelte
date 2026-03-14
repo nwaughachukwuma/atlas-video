@@ -23,11 +23,41 @@
   import { toast } from "svelte-sonner";
 
   let { route: routeResult }: { route: RouteResult } = $props();
+  const originalPath = $derived(routeResult.result.path.original);
+  const scopedCommand = $derived.by((): Run["command"] | "" => {
+    if (originalPath.startsWith("/transcribe/runs")) return "transcribe";
+    if (originalPath.startsWith("/extract/runs")) return "extract";
+    return "";
+  });
+  const runsBasePath = $derived.by(() => {
+    if (scopedCommand === "transcribe") return "/transcribe/runs";
+    if (scopedCommand === "extract") return "/extract/runs";
+    return "/runs";
+  });
+  const listHeading = $derived.by(() => {
+    if (scopedCommand === "transcribe") return "Transcribe Runs";
+    if (scopedCommand === "extract") return "Extract Runs";
+    return "Runs";
+  });
+  const listDescription = $derived.by(() => {
+    if (scopedCommand === "transcribe") {
+      return "Persisted history for transcribe runs across queued and direct execution.";
+    }
+    if (scopedCommand === "extract") {
+      return "Persisted history for extract runs across queued and direct execution.";
+    }
+    return "Persisted history for queued and direct transcribe, extract, and index runs.";
+  });
+  const detailHeading = $derived.by(() => {
+    if (scopedCommand === "transcribe") return "Transcribe Run Detail";
+    if (scopedCommand === "extract") return "Extract Run Detail";
+    return "Run Detail";
+  });
   const runId: string | null = $derived.by(
     () =>
-      // @ts-expect-error
       routeResult.result.path.params?.id ??
-      routeResult.result.path.original.match(/^\/runs\/([^/]+)$/)?.[1] ??
+      originalPath.match(/^\/(?:transcribe|extract)\/runs\/([^/]+)$/)?.[1] ??
+      originalPath.match(/^\/runs\/([^/]+)$/)?.[1] ??
       null,
   );
 
@@ -76,7 +106,7 @@
     loading = true;
     return runsList(
       selectedStatus || null,
-      selectedCommand || null,
+      scopedCommand || selectedCommand || null,
       (selectedMode || null) as RunMode | null,
       100,
     )
@@ -125,6 +155,9 @@
   }
 
   onMount(() => {
+    if (scopedCommand) {
+      selectedCommand = scopedCommand;
+    }
     if (runId) fetchRun();
     else fetchRuns();
 
@@ -149,7 +182,7 @@
 <div class="p-8 max-w-[920px]">
   {#if runId}
     <div class="mb-4 text-[0.85rem]">
-      <a href={toPath("/runs")} use:route>← All Runs</a>
+      <a href={toPath(runsBasePath)} use:route>← All Runs</a>
     </div>
 
     <h2 class="flex items-center gap-1.5 mb-1">
@@ -157,7 +190,8 @@
         size={20}
         strokeWidth={2}
         style="display:inline;vertical-align:middle;"
-      /> Run Detail
+      />
+      {detailHeading}
     </h2>
     <p class="text-muted mb-5">Inspect persisted output and benchmark data.</p>
 
@@ -274,12 +308,10 @@
         size={20}
         strokeWidth={2}
         style="display:inline;vertical-align:middle;"
-      /> Runs
+      />
+      {listHeading}
     </h2>
-    <p class="text-muted mb-5">
-      Persisted history for queued and direct transcribe, extract, and index
-      runs.
-    </p>
+    <p class="text-muted mb-5">{listDescription}</p>
 
     <div class="card mb-4">
       <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
@@ -303,18 +335,20 @@
           {/each}
         </div>
 
-        <div class="grid grid-cols-4 gap-[0.4rem] max-sm:grid-cols-2">
-          {#each commandOptions as option}
-            <button
-              class={selectedCommand === option
-                ? "btn-primary"
-                : "btn-secondary"}
-              onclick={() => setCommandFilter(option)}
-            >
-              {option || "All commands"}
-            </button>
-          {/each}
-        </div>
+        {#if !scopedCommand}
+          <div class="grid grid-cols-4 gap-[0.4rem] max-sm:grid-cols-2">
+            {#each commandOptions as option}
+              <button
+                class={selectedCommand === option
+                  ? "btn-primary"
+                  : "btn-secondary"}
+                onclick={() => setCommandFilter(option)}
+              >
+                {option || "All commands"}
+              </button>
+            {/each}
+          </div>
+        {/if}
 
         <div class="grid grid-cols-3 gap-[0.4rem] max-sm:grid-cols-1">
           {#each modeOptions as option}
@@ -343,7 +377,7 @@
       <div class="flex flex-col gap-2">
         {#each runs as run}
           <a
-            href={toPath(`/runs/${run.id}`)}
+            href={toPath(`${runsBasePath}/${run.id}`)}
             use:route
             class="card flex flex-col gap-[0.35rem] text-ink transition-[border-color] duration-150 hover:border-cobalt"
           >

@@ -55,6 +55,14 @@
     formats.
   </p>
 
+  <div class="mb-5 text-[0.9rem]">
+    <a
+      class="px-3 py-2 border-cobalt/40 border"
+      href={toPath("/transcribe/runs")}
+      use:route>View Previous Runs →</a
+    >
+  </div>
+
   <div class="card mb-4">
     <VideoUpload
       bind:file
