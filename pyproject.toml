@@ -44,7 +44,7 @@ dependencies = [
     "python-dotenv",
     "python-multipart>=0.0.22",
     "nanoid",
-    "pydantic-settings=>2.12.0"
+    "pydantic-settings>=2.12.0"
 ]
 
 [project.optional-dependencies]
