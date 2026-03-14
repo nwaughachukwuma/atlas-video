@@ -28,12 +28,12 @@ from atlas.cli import (
     cmd_index,
     cmd_list_chat,
     cmd_list_videos,
+    cmd_runs_list,
+    cmd_runs_status,
     cmd_search,
     cmd_serve,
     cmd_stats,
     cmd_transcribe,
-    cmd_runs_list,
-    cmd_runs_status,
     format_elapsed,
     parse_duration,
     short_name,
@@ -704,7 +704,14 @@ class TestCmdTranscribe:
         monkeypatch.setattr("atlas.task_queue.helpers.RESULTS_DIR", results_dir)
 
         def fake_start_direct_run(command, video_path, output_path, benchmark):
-            store.add("run123", command, f"{command} {video_path.name}", run_type="direct", output_path=output_path, benchmark=benchmark)
+            store.add(
+                "run123",
+                command,
+                f"{command} {video_path.name}",
+                run_type="direct",
+                output_path=output_path,
+                benchmark=benchmark,
+            )
             store.mark_running("run123")
             return "run123", store
 
@@ -1007,7 +1014,7 @@ class TestTaskQueueSubmit:
         # Prevent real subprocess spawn
         monkeypatch.setattr("atlas.task_queue.queue.subprocess.Popen", lambda *a, **kw: None)
 
-        queue = TaskQueue(max_workers=1, db_path=tmp_path / "q.db")
+        queue = TaskQueue(db_path=tmp_path / "q.db")
         task_id = queue.submit(
             argparse.Namespace(video_path="test.mp4"),
             command="transcribe",
@@ -1027,7 +1034,7 @@ class TestTaskQueueSubmit:
         monkeypatch.setattr("atlas.task_queue.queue.RESULTS_DIR", results_dir)
         monkeypatch.setattr("atlas.task_queue.queue.subprocess.Popen", lambda *a, **kw: None)
 
-        queue = TaskQueue(max_workers=1, db_path=tmp_path / "q.db")
+        queue = TaskQueue(db_path=tmp_path / "q.db")
         task_id = queue.submit(argparse.Namespace(), command="test")
         assert (results_dir / task_id).is_dir()
         # Verify args.json was written

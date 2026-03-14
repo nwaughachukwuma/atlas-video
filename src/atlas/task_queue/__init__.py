@@ -18,14 +18,12 @@ Design
 from .commands import add_queue_commands, cmd_queue_list, cmd_queue_status
 from .config import (
     DB_PATH,
-    DEFAULT_WORKERS,
     HEARTBEAT_INTERVAL,
     HEAVY_COMMANDS,
     HEAVY_CONCURRENCY,
     MAX_COMPLETED_TASKS,
     MAX_CONCURRENT,
     MAX_FAILED_TASKS,
-    MAX_WORKERS,
     QUEUE_DIR,
     RESULTS_DIR,
     TASK_TIMEOUT,
@@ -50,14 +48,12 @@ from .store import TaskStore
 __all__ = [
     # config
     "DB_PATH",
-    "DEFAULT_WORKERS",
     "HEARTBEAT_INTERVAL",
     "HEAVY_COMMANDS",
     "HEAVY_CONCURRENCY",
     "MAX_COMPLETED_TASKS",
     "MAX_CONCURRENT",
     "MAX_FAILED_TASKS",
-    "MAX_WORKERS",
     "QUEUE_DIR",
     "RESULTS_DIR",
     "TASK_TIMEOUT",

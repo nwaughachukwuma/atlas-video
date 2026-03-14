@@ -10,6 +10,7 @@ from typing import Optional
 
 from .file_extension import get_content_type, get_file_extension
 from .logger import logger
+from .settings import settings
 from .utils import ChunkSlot, TempPath, process_time
 
 
@@ -22,7 +23,7 @@ class MediaFileManager:
         self._content_type: Optional[str] = None
 
         self._file_ext: Optional[str] = None
-        self.max_workers = min(8, (os.cpu_count() or 1) * 4)
+        self.max_workers = min(settings.process_workers, (os.cpu_count() or 1) * 4)
 
     @property
     def duration(self) -> float:

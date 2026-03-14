@@ -12,8 +12,6 @@ from ..settings import settings
 
 # ── Worker & timeout knobs ────────────────────────────────────────────────────
 
-DEFAULT_WORKERS = 2
-MAX_WORKERS = 2
 TASK_TIMEOUT = 600  # seconds (10 minutes)
 HEARTBEAT_INTERVAL = 10  # seconds between heartbeat checks
 

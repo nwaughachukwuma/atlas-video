@@ -13,18 +13,16 @@ from typing import Any, List, Optional
 from uuid import uuid4
 
 from .config import (
-    DEFAULT_WORKERS,
     HEAVY_COMMANDS,
     HEAVY_CONCURRENCY,
     MAX_CONCURRENT,
-    MAX_WORKERS,
     RESULTS_DIR,
     TASK_TIMEOUT,
     TRANSCRIBE_CONCURRENCY,
 )
 from .helpers import worker_log_file_for
-from .store import TaskStore
 from .run_history_store import RunHistoryStore
+from .store import TaskStore
 from ..logger import get_logger
 
 logger = get_logger("atlas:queue")
@@ -38,10 +36,9 @@ class TaskQueue:
     returns immediately — no threads, no waiting.
 
     Args:
-        max_workers: advisory concurrency limit (currently logged, not enforced).
+        db_path: optional path to SQLite database file; defaults to ``~/.atlas/queue/tasks.db``
 
     Usage::
-
         queue = get_queue()
         tid = queue.submit(
             args,
@@ -52,10 +49,13 @@ class TaskQueue:
         # and fires a system notification on completion/failure.
     """
 
-    def __init__(self, max_workers: int = DEFAULT_WORKERS, *, db_path: Path | None = None) -> None:
+    def __init__(self, *, db_path: Path | None = None) -> None:
         self._store = TaskStore(db_path) if db_path else TaskStore()
         self._history = RunHistoryStore(db_path) if db_path else RunHistoryStore()
-        self._max_workers = min(max_workers, MAX_WORKERS)
+
+        from ..settings import settings
+
+        self._max_workers = settings.max_queue_workers
 
         # Clean up leftovers from a crashed previous session. Only marks
         # tasks that have been pending/running far longer than the timeout
@@ -221,9 +221,9 @@ class TaskQueue:
 _queue: Optional[TaskQueue] = None
 
 
-def get_queue(max_workers: int = DEFAULT_WORKERS) -> TaskQueue:
+def get_queue() -> TaskQueue:
     """Return (or create) the process-wide ``TaskQueue`` singleton."""
     global _queue
     if _queue is None:
-        _queue = TaskQueue(max_workers=max_workers)
+        _queue = TaskQueue()
     return _queue

@@ -33,6 +33,11 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = 8000
 
+    # Task Queue and Concurrency
+    process_workers: int = 8
+    default_queue_workers: int = 2
+    max_queue_workers: int = 2
+
     @property
     def zvec_store_root(self) -> Path:
         """Get absolute path to zvec store root directory"""
