@@ -192,7 +192,7 @@ class VideoChat(BaseCollection):
         """
         from ..text_embedding import embed_text
 
-        embedding = await embed_text(content, self.embedding_dim)
+        embedding = await embed_text(content, "RETRIEVAL_DOCUMENT", self.embedding_dim)
         doc_id = self._uuid()
         metadata = {"timestamp": datetime.now().isoformat()}
         zvec_doc = self._make_doc(
@@ -247,7 +247,7 @@ class VideoChat(BaseCollection):
         """
         from ..text_embedding import embed_text
 
-        query_embedding = await embed_text(query, self.embedding_dim)
+        query_embedding = await embed_text(query, "QUESTION_ANSWERING", self.embedding_dim)
         try:
             vector_query = make_vector_query(query_embedding)
             filter = f"video_id = '{video_id}' AND role = '{role}'" if role else f"video_id = '{video_id}'"

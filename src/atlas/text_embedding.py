@@ -4,7 +4,11 @@ Text embedding using Gemini API
 
 from __future__ import annotations
 
+from typing import Literal
+
 from .utils import logger
+
+TaskType = Literal["RETRIEVAL_QUERY", "RETRIEVAL_DOCUMENT", "QUESTION_ANSWERING"]
 
 
 class TextEmbedding:
@@ -13,7 +17,11 @@ class TextEmbedding:
     def __init__(self, content: str):
         self.content = content
 
-    async def get_embedding(self, dimensionality: int = 768) -> list[float]:
+    async def get_embedding(
+        self,
+        task_type: TaskType,
+        dimensionality=768,
+    ) -> list[float]:
         """Get text embedding using Gemini embedding model
         Args:
             dimensionality: Output dimension (768 or 3072 for gemini-embedding-001)
@@ -30,6 +38,7 @@ class TextEmbedding:
                 contents=self.content,
                 config=types.EmbedContentConfig(
                     output_dimensionality=dimensionality,
+                    task_type=task_type,
                 ),
             )
 
@@ -43,7 +52,11 @@ class TextEmbedding:
             raise
 
 
-async def embed_text(content: str, dimensionality=768) -> list[float]:
+async def embed_text(
+    content: str,
+    task_type: TaskType,
+    dimensionality=768,
+) -> list[float]:
     """Convenience method to get text embedding
     Args:
         content: Text content to embed
@@ -51,4 +64,4 @@ async def embed_text(content: str, dimensionality=768) -> list[float]:
     Returns:
         List of embedding values
     """
-    return await TextEmbedding(content).get_embedding(dimensionality)
+    return await TextEmbedding(content).get_embedding(task_type, dimensionality)
