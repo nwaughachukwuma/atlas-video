@@ -140,33 +140,11 @@
         style="display:inline;vertical-align:middle;"
       /> Task queued! <strong>Task ID:</strong>
       {taskInfo.task_id ?? taskInfo.id ?? JSON.stringify(taskInfo)}
-      {#if taskInfo.output_path}
-        <br /><strong>Stored output:</strong> {taskInfo.output_path}
-      {/if}
-      {#if taskInfo.benchmark_path}
-        <br /><strong>Benchmark:</strong> {taskInfo.benchmark_path}
-      {/if}
-      <br /><a href={toPath(`/queue/${taskInfo.task_id ?? taskInfo.id}`)} use:route>View Task →</a>
+      <br /><a href={toPath("/queue")} use:route>View Queue →</a>
     </div>
   {/if}
 
   {#if result}
-    <div class="success-box mt-2">
-      <CircleCheckIcon
-        size={16}
-        strokeWidth={2}
-        style="display:inline;vertical-align:middle;"
-      /> Saved run <strong>{result.id}</strong>
-      {#if result.output_path}
-        <br /><strong>Stored output:</strong> {result.output_path}
-      {/if}
-      {#if result.benchmark_path}
-        <br /><strong>Benchmark:</strong> {result.benchmark_path}
-      {/if}
-      {#if result.id}
-        <br /><a href={toPath(`/runs/${result.id}`)} use:route>Inspect saved run →</a>
-      {/if}
-    </div>
     <div class="card mt-2">
       <h3>
         <CircleCheckIcon

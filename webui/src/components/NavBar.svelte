@@ -5,7 +5,6 @@
     FlaskConicalIcon,
     DatabaseIcon,
     FilmIcon,
-    HistoryIcon,
     ClipboardListIcon,
     LayoutDashboardIcon,
     ZapIcon,
@@ -43,12 +42,6 @@
       icon: ClipboardListIcon,
       label: "Queue",
       title: "Task Queue",
-    },
-    {
-      path: "/runs",
-      icon: HistoryIcon,
-      label: "Runs",
-      title: "Run History",
     },
     {
       path: "/dashboard",

@@ -29,9 +29,7 @@ from pydantic import BaseModel
 
 from ._meta import DISPLAY_NAME, __version__
 from .cli.cmd_media import cmd_extract, cmd_index, cmd_transcribe
-from .cli.cmd_runs import cmd_runs_list, cmd_runs_status
 from .file_extension import get_ext_from_mimetype
-from .task_queue.commands import cmd_queue_list, cmd_queue_status
 from .ui_router import ui_router
 from .uuid import uuid
 
@@ -91,7 +89,6 @@ def _run_command(func, args: argparse.Namespace, *, tmp_dir: Path | None = None)
 
     stdout = StringIO()
     stderr = StringIO()
-    returned: Any = None
 
     # Force the shared CLI console to write to our stderr buffer so that Rich
     # progress bars / spinners don't pollute stdout (which we parse as JSON).
@@ -99,7 +96,7 @@ def _run_command(func, args: argparse.Namespace, *, tmp_dir: Path | None = None)
     try:
         with redirect_stdout(stdout), redirect_stderr(stderr):
             try:
-                returned = func(args)
+                func(args)
             except SystemExit as exc:
                 code = exc.code if isinstance(exc.code, int) else 1
                 http_status = 500 if code == 1 else 400
@@ -116,9 +113,6 @@ def _run_command(func, args: argparse.Namespace, *, tmp_dir: Path | None = None)
         cli_module._console = None
         if tmp_dir and tmp_dir.exists():
             shutil.rmtree(tmp_dir, ignore_errors=True)
-
-    if returned is not None:
-        return returned
 
     raw = stdout.getvalue()
     try:
@@ -303,32 +297,41 @@ def create_app() -> FastAPI:
     def queue_list(
         status: Literal["pending", "running", "completed", "failed", "timeout"] | None = None,
     ) -> dict[str, Any]:
-        return _run_command(cmd_queue_list, argparse.Namespace(status=status))
+        from .task_queue.store import TaskStore
+
+        store = TaskStore()
+        tasks = store.list_all(status)
+        return {
+            "status_filter": status,
+            "count": len(tasks),
+            "tasks": tasks,
+        }
 
     @app.get("/queue/status/{task_id}")
     def queue_status(task_id: str) -> dict[str, Any]:
-        result = _run_command(cmd_queue_status, argparse.Namespace(task_id=task_id))
-        if isinstance(result, dict) and result.get("error"):
-            raise HTTPException(404, detail=result["error"])
-        return result
+        from .task_queue.commands import _duration_str
+        from .task_queue.config import RESULTS_DIR
+        from .task_queue.store import TaskStore
 
-    @app.get("/runs/list")
-    def runs_list(
-        status: Literal["pending", "running", "completed", "failed", "timeout"] | None = None,
-        command: Literal["transcribe", "extract", "index"] | None = None,
-        run_type: Literal["queued", "direct"] | None = None,
-    ) -> dict[str, Any]:
-        return _run_command(
-            cmd_runs_list,
-            argparse.Namespace(status=status, command=command, run_type=run_type),
-        )
+        store = TaskStore()
+        task = store.get(task_id)
+        if not task:
+            raise HTTPException(404, detail=f"Task {task_id} not found")
 
-    @app.get("/runs/status/{run_id}")
-    def runs_status(run_id: str) -> dict[str, Any]:
-        result = _run_command(cmd_runs_status, argparse.Namespace(run_id=run_id))
-        if isinstance(result, dict) and result.get("error"):
-            raise HTTPException(404, detail=result["error"])
-        return result
+        output: dict[str, Any] = dict(task)
+        output["duration"] = _duration_str(task.get("started_at"), task.get("finished_at")) or None
+
+        results_dir = RESULTS_DIR / task_id
+        output_file = results_dir / "output.json"
+        benchmark_file = results_dir / "benchmark.txt"
+
+        if output_file.exists():
+            output["output_path"] = str(output_file)
+
+        if benchmark_file.exists():
+            output["benchmark_path"] = str(benchmark_file)
+
+        return output
 
     ui_router(app)
     return app

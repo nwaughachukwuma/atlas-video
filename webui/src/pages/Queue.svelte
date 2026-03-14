@@ -75,34 +75,31 @@
     <QueueTaskId {taskId} {loading} />
   {:else}
     <!-- Task list view -->
-      <h2 class="flex items-center gap-1.5">
-        <ClipboardListIcon
-          size={20}
-          strokeWidth={2}
-          style="display:inline;vertical-align:middle;"
-        /> Task Queue
-      </h2>
-      <p class="text-muted mb-5">Monitor queued work only.</p>
+    <h2 class="flex items-center gap-1.5">
+      <ClipboardListIcon
+        size={20}
+        strokeWidth={2}
+        style="display:inline;vertical-align:middle;"
+      /> Task Queue
+    </h2>
+    <p class="text-muted mb-5">Monitor and inspect background tasks.</p>
 
-      <div class="flex flex-wrap gap-[0.4rem] mb-3">
-        {#each statusOptions as s}
-          <button
-            class={statusFilter === s ? "btn-primary" : "btn-secondary"}
+    <div class="flex flex-wrap gap-[0.4rem] mb-5">
+      {#each statusOptions as s}
+        <button
+          class={statusFilter === s ? "btn-primary" : "btn-secondary"}
           onclick={() => {
             statusFilter = s;
             fetchTasks();
           }}
-          >
-            {s ?? "All"}
-          </button>
-        {/each}
-      </div>
-
-      <div class="flex flex-wrap gap-[0.4rem] mb-5">
-        <button class="btn-secondary" onclick={fetchTasks} title="Refresh"
-        >↻ Refresh</button
         >
-      </div>
+          {s ?? "All"}
+        </button>
+      {/each}
+      <button class="btn-secondary" onclick={fetchTasks} title="Refresh"
+        >↻ Refresh</button
+      >
+    </div>
 
     {#if loading}
       <p class="flex gap-x-2 items-center">
@@ -124,9 +121,6 @@
           >
             <div class="flex items-center gap-2">
               <span class={badgeClass(t.status)}>{t.status}</span>
-              {#if t.run_type}
-                <span class="tag text-[0.78rem]">{t.run_type}</span>
-              {/if}
               <span class="tag text-[0.78rem]">{t.command}</span>
               <span class="text-[0.88rem] flex-1">{t.label}</span>
             </div>

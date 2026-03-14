@@ -9,7 +9,6 @@
   import Videos from "./pages/Videos.svelte";
   import VideoDetail from "./pages/VideoDetail.svelte";
   import Queue from "./pages/Queue.svelte";
-  import Runs from "./pages/Runs.svelte";
   import Dashboard from "./pages/Dashboard.svelte";
   import { BASE_PATH } from "./lib/routing.ts";
   import { Toaster } from "svelte-sonner";
@@ -23,8 +22,6 @@
     { path: "/videos", component: Videos },
     { path: "/queue/(?<id>[^/]+)", component: Queue },
     { path: "/queue", component: Queue },
-    { path: "/runs/(?<id>[^/]+)", component: Runs },
-    { path: "/runs", component: Runs },
     { path: "/dashboard", component: Dashboard },
   ];
 </script>

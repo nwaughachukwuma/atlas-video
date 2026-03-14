@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from .helpers import deserialize_result, get_result_artifacts
+from .config import RESULTS_DIR
 from .store import TaskStore
 
 _STATUS_COLORS = {
@@ -27,7 +27,7 @@ def add_queue_commands(subparsers: Any) -> None:
     p_queue = subparsers.add_parser(
         "queue",
         help="Manage the task queue.",
-        description="View queued tasks (transcribe / extract / index).",
+        description="View and manage background tasks (transcribe / extract / index).",
         epilog=(
             "Examples:\n"
             "  atlas queue list\n"
@@ -107,7 +107,7 @@ def cmd_queue_list(args: argparse.Namespace) -> None:
     output = {
         "status_filter": status,
         "count": len(tasks),
-        "tasks": [{**task, "run_type": "queued"} for task in tasks],
+        "tasks": tasks,
     }
     print(json.dumps(output, indent=2, default=str))
 
@@ -123,20 +123,17 @@ def cmd_queue_status(args: argparse.Namespace) -> None:
         print(json.dumps({"error": f"Task {args.task_id} not found"}))
         return
 
+    results_dir = RESULTS_DIR / task["id"]
+    output_file = results_dir / "output.json"
+    benchmark_file = results_dir / "benchmark.txt"
+
     output = dict(task)
-    output["run_type"] = "queued"
     output["duration"] = _duration_str(task.get("started_at"), task.get("finished_at")) or None
-    requested_output_path = output.get("output_path")
-    artifacts = get_result_artifacts(task)
-    if requested_output_path:
-        output["requested_output_path"] = requested_output_path
-    if artifacts["result_path"]:
-        output["output_path"] = artifacts["result_path"]
-    if artifacts["benchmark_path"]:
-        output["benchmark_path"] = artifacts["benchmark_path"]
-    if artifacts["result_text"] is not None:
-        output["result"] = deserialize_result(artifacts["result_text"])
-    if artifacts["benchmark_text"] is not None:
-        output["benchmark_text"] = artifacts["benchmark_text"]
+
+    output["output_path"] = str(output_file)
+    # Expose benchmark path instead of inlining the table.
+    has_benchmark = bool(output.pop("benchmark", False))
+    if has_benchmark:
+        output["benchmark_path"] = str(benchmark_file)
 
     print(json.dumps(output, indent=2, default=str))

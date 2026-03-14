@@ -42,8 +42,8 @@ class TaskStore:
         self.db_path = db_path
         self._local = threading.local()  # per-instance thread-local storage
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        # Initialize the first connection eagerly so schema creation/migrations happen up front.
-        self._conn()
+        with self._conn() as conn:
+            conn.executescript(_DDL)
 
     # ── connection helpers ────────────────────────────────────────────
 
@@ -54,13 +54,8 @@ class TaskStore:
             conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
             conn.row_factory = sqlite3.Row
             conn.execute("PRAGMA journal_mode=WAL")
-            self._ensure_schema(conn)
             self._local.conn = conn
         return conn
-
-    def _ensure_schema(self, conn: sqlite3.Connection) -> None:
-        """Create the queued-tasks table if it does not already exist."""
-        conn.executescript(_DDL)
 
     @contextmanager
     def _tx(self):
@@ -135,7 +130,14 @@ class TaskStore:
     def list_all(self, status: Optional[str] = None) -> List[dict]:
         """Return all tasks, optionally filtered by *status*."""
         if status:
-            rows = self._conn().execute("SELECT * FROM tasks WHERE status=? ORDER BY created_at DESC", (status,)).fetchall()
+            rows = (
+                self._conn()
+                .execute(
+                    "SELECT * FROM tasks WHERE status=? ORDER BY created_at DESC",
+                    (status,),
+                )
+                .fetchall()
+            )
         else:
             rows = self._conn().execute("SELECT * FROM tasks ORDER BY created_at DESC").fetchall()
         return [dict(r) for r in rows]

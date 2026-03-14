@@ -21,7 +21,6 @@ from .config import (
     TRANSCRIBE_CONCURRENCY,
 )
 from .helpers import worker_log_file_for
-from .run_history_store import RunHistoryStore
 from .store import TaskStore
 from ..logger import get_logger
 
@@ -51,8 +50,6 @@ class TaskQueue:
 
     def __init__(self, *, db_path: Path | None = None) -> None:
         self._store = TaskStore(db_path) if db_path else TaskStore()
-        self._history = RunHistoryStore(db_path) if db_path else RunHistoryStore()
-
         from ..settings import settings
 
         self._max_workers = settings.max_queue_workers
@@ -90,14 +87,6 @@ class TaskQueue:
         )
 
         self._store.add(task_id, command, label, output_path, benchmark)
-        self._history.add(
-            task_id,
-            command,
-            label,
-            run_type="queued",
-            output_path=output_path,
-            benchmark=benchmark,
-        )
 
         # Dispatch immediately if a slot is open; otherwise the task stays
         # pending and will be picked up when a running worker finishes.
@@ -213,7 +202,6 @@ class TaskQueue:
         )
         for task in stale:
             self._store.mark_failed(task["id"], "Interrupted: previous session ended")
-            self._history.mark_failed(task["id"], "Interrupted: previous session ended")
 
 
 # ── global singleton ──────────────────────────────────────────────────────────

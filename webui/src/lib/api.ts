@@ -52,15 +52,6 @@ async function get<T>(path: string): Promise<T> {
   throw new Error(err.detail ? JSON.stringify(err.detail) : res.statusText);
 }
 
-function withQuery(path: string, params: Record<string, string | null | undefined>): string {
-  const query = new URLSearchParams();
-  for (const [key, value] of Object.entries(params)) {
-    if (value) query.set(key, value);
-  }
-  const suffix = query.toString();
-  return suffix ? `${path}?${suffix}` : path;
-}
-
 // ── Mutating endpoints ────────────────────────────────────────────────────────
 
 export function transcribe(
@@ -141,30 +132,10 @@ export const health = (): Promise<HealthResponse> =>
 export const queueList = (
   status: string | null = null,
 ): Promise<QueueListResponse> =>
-  get<QueueListResponse>(
-    withQuery("/queue/list", {
-      status,
-    }),
-  );
+  get<QueueListResponse>("/queue/list" + (status ? `?status=${status}` : ""));
 
 export const queueStatus = (id: string): Promise<Task> =>
   get<Task>(`/queue/status/${id}`);
-
-export const runsList = (
-  status: string | null = null,
-  command: string | null = null,
-  runType: "queued" | "direct" | null = null,
-): Promise<QueueListResponse> =>
-  get<QueueListResponse>(
-    withQuery("/runs/list", {
-      status,
-      command,
-      run_type: runType,
-    }),
-  );
-
-export const runsStatus = (id: string): Promise<Task> =>
-  get<Task>(`/runs/status/${id}`);
 
 // ── SSE chat stream ───────────────────────────────────────────────────────────
 

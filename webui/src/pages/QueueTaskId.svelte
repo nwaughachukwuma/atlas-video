@@ -34,10 +34,6 @@
       );
   }
 
-  function formatResult(value: unknown) {
-    return typeof value === "string" ? value : JSON.stringify(value, null, 2);
-  }
-
   onMount(() => {
     fetchTaskStatus();
 
@@ -91,13 +87,6 @@
           >{task.command}</span
         >
       </div>
-      {#if task.run_type}
-        <div class="flex gap-4 text-[0.88rem]">
-          <span class="text-muted min-w-24">Run type</span><span class="text-ink"
-            >{task.run_type}</span
-          >
-        </div>
-      {/if}
       <div class="flex gap-4 text-[0.88rem]">
         <span class="text-muted min-w-24">Label</span><span class="text-ink"
           >{task.label}</span
@@ -128,37 +117,7 @@
     {#if task.output_path}
       <div class="success-box mt-4">
         Output: <code class="font-mono text-[0.78rem]">{task.output_path}</code>
-        {#if task.requested_output_path}
-          <div class="mt-2">
-            Also written to:
-            <code class="font-mono text-[0.78rem]">{task.requested_output_path}</code>
-          </div>
-        {/if}
-        {#if task.benchmark_path}
-          <div class="mt-2">
-            Benchmark:
-            <code class="font-mono text-[0.78rem]">{task.benchmark_path}</code>
-          </div>
-        {/if}
       </div>
-    {/if}
-
-    {#if task.result}
-      <details class="card mt-4">
-        <summary class="cursor-pointer text-[0.88rem] text-muted">
-          Persisted result
-        </summary>
-        <pre class="max-h-96 overflow-y-auto m-0 mt-3 text-sm">{formatResult(task.result)}</pre>
-      </details>
-    {/if}
-
-    {#if task.benchmark_text}
-      <details class="card mt-4">
-        <summary class="cursor-pointer text-[0.88rem] text-muted">
-          Benchmark summary
-        </summary>
-        <pre class="max-h-80 overflow-y-auto m-0 mt-3 text-sm">{task.benchmark_text}</pre>
-      </details>
     {/if}
 
     {#if task.status === "pending" || task.status === "running"}

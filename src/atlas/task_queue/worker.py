@@ -19,13 +19,13 @@ import logging
 import os
 import sys
 import threading
+from pathlib import Path
 from time import perf_counter
 
 from .config import RESULTS_DIR, TASK_TIMEOUT
-from .helpers import persist_benchmark, persist_result, worker_log_file_for
+from .helpers import serialize_result, write_file
 from .notify import notify
 from .store import TaskStore
-from .run_history_store import RunHistoryStore
 from ..logger import get_logger
 
 logger = get_logger("atlas:worker")
@@ -61,6 +61,58 @@ def _import_func(dotted_path: str):
     return getattr(module, func_name)
 
 
+def _write_benchmark(task_id: str, total_s: float | None = None) -> None:
+    """Write a benchmark summary as an ASCII table to benchmark.txt.
+
+    Args:
+        task_id: The task whose result directory receives the file.
+        total_s: Optional wall-clock task runtime written below the table.
+    """
+    try:
+        from ..benchmark import registry
+
+        stats = registry.all_stats()
+        if not stats:
+            return
+
+        headers = ("Function", "Calls", "Total (s)", "Avg (s)", "Min (s)", "Max (s)")
+        rows = [
+            (
+                s.name,
+                str(s.calls),
+                f"{s.total_s:.3f}",
+                f"{s.avg_s:.3f}",
+                f"{s.min_s:.3f}",
+                f"{s.max_s:.3f}",
+            )
+            for s in stats
+        ]
+
+        # Compute column widths from headers and data.
+        col_widths = [len(h) for h in headers]
+        for row in rows:
+            for i, cell in enumerate(row):
+                col_widths[i] = max(col_widths[i], len(cell))
+
+        def _fmt_row(cells: tuple[str, ...]) -> str:
+            return "| " + " | ".join(c.ljust(col_widths[i]) for i, c in enumerate(cells)) + " |"
+
+        sep = "+-" + "-+-".join("-" * w for w in col_widths) + "-+"
+        lines = [
+            "Benchmark Summary",
+            sep,
+            _fmt_row(headers),
+            sep,
+            *[_fmt_row(r) for r in rows],
+            sep,
+        ]
+        if total_s is not None:
+            lines.append(f"\nTotal runtime: {total_s:.2f}s")
+        write_file(RESULTS_DIR / task_id / "benchmark.txt", "\n".join(lines))
+    except Exception as exc:
+        logger.warning("Failed to write benchmark for task %s: %s", task_id, exc)
+
+
 # ── main entry point ─────────────────────────────────────────────────────────
 
 
@@ -71,7 +123,6 @@ def run_task(task_id: str) -> None:
     load_dotenv()
 
     store = TaskStore()
-    history = RunHistoryStore()
     task = store.get(task_id)
     if not task:
         logger.error("Task %s not found in database", task_id)
@@ -81,20 +132,19 @@ def run_task(task_id: str) -> None:
     output_path: str | None = task.get("output_path")
     benchmark: bool = bool(task.get("benchmark"))
     results_dir = RESULTS_DIR / task_id
+    output_file = results_dir / "output.json"
     args_file = results_dir / "args.json"
 
     # Resolve the worker function.
     func_path = _COMMANDS.get(command)
     if not func_path:
         store.mark_failed(task_id, f"Unknown command: {command}")
-        history.mark_failed(task_id, f"Unknown command: {command}")
         logger.error("Unknown command %r for task %s", command, task_id)
         return
 
     # Load serialised arguments.
     if not args_file.exists():
         store.mark_failed(task_id, "args.json missing — cannot reconstruct arguments")
-        history.mark_failed(task_id, "args.json missing — cannot reconstruct arguments")
         return
 
     args_dict = json.loads(args_file.read_text())
@@ -102,7 +152,6 @@ def run_task(task_id: str) -> None:
 
     func = _import_func(func_path)
     store.mark_running(task_id)
-    history.mark_running(task_id)
     logger.info("Worker started for task %s (%s)", task_id, command)
 
     t_start = perf_counter()
@@ -113,10 +162,10 @@ def run_task(task_id: str) -> None:
         timed_out.wait(TASK_TIMEOUT)
         if not timed_out.is_set():
             # Timeout reached — the main thread is still blocked.
-            error_payload = {"error": f"Exceeded {TASK_TIMEOUT}s timeout"}
-            result_text, result_path = persist_result(task_id, error_payload, output_path=output_path)
             store.mark_timeout(task_id)
-            history.mark_timeout(task_id, result_text=result_text, result_path=result_path)
+            write_file(output_file, json.dumps({"error": f"Exceeded {TASK_TIMEOUT}s timeout"}))
+            if output_path:
+                write_file(Path(output_path), json.dumps({"error": f"Exceeded {TASK_TIMEOUT}s timeout"}))
             notify(
                 "Atlas Task Status",
                 f"[timeout]: {command} ({task_id}) — exceeded {TASK_TIMEOUT}s",
@@ -135,18 +184,13 @@ def run_task(task_id: str) -> None:
         # Cancel the watchdog.
         timed_out.set()
 
-        content, result_path = persist_result(task_id, result, output_path=output_path)
-        benchmark_text, benchmark_path = (None, None)
-        if benchmark:
-            benchmark_text, benchmark_path = persist_benchmark(task_id, total_s=perf_counter() - t_start)
+        content = serialize_result(result)
         store.mark_completed(task_id)
-        history.mark_completed(
-            task_id,
-            result_text=content,
-            result_path=result_path,
-            benchmark_text=benchmark_text,
-            benchmark_path=benchmark_path,
-        )
+        write_file(output_file, content)
+        if output_path:
+            write_file(Path(output_path), content)
+        if benchmark:
+            _write_benchmark(task_id, total_s=perf_counter() - t_start)
         notify(
             "Atlas Task Status",
             f"[completed]: {command} ({task_id}) finished successfully",
@@ -158,9 +202,10 @@ def run_task(task_id: str) -> None:
         timed_out.set()  # cancel watchdog
 
         error_msg = f"{type(exc).__name__}: {exc}"
-        content, result_path = persist_result(task_id, {"error": error_msg}, output_path=output_path)
         store.mark_failed(task_id, error_msg)
-        history.mark_failed(task_id, error_msg, result_text=content, result_path=result_path)
+        write_file(output_file, json.dumps({"error": error_msg}))
+        if output_path:
+            write_file(Path(output_path), json.dumps({"error": error_msg}))
         notify(
             "Atlas Task Status",
             f"[failed]: {command} ({task_id}) — {error_msg[:120]}",
@@ -179,7 +224,7 @@ if __name__ == "__main__":
 
     # Point root logger output to the worker log file.
     _task_id = sys.argv[1]
-    _log_file = worker_log_file_for(_task_id)
+    _log_file = RESULTS_DIR / _task_id / "worker.log"
     _log_file.parent.mkdir(parents=True, exist_ok=True)
 
     logging.basicConfig(
