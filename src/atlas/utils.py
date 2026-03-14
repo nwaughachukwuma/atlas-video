@@ -214,18 +214,18 @@ class MediaChunk(BaseModel):
 
 DescriptionAttr = Literal[
     "visual_cues",
-    "interactions",
-    "contextual_information",
     "audio_analysis",
     "transcript",
+    "interactions",
+    "contextual_information",
 ]
 
 DEFAULT_DESCRIPTION_ATTRS: list[DescriptionAttr] = [
     "visual_cues",
-    "interactions",
-    "contextual_information",
     "audio_analysis",
     "transcript",
+    "interactions",
+    "contextual_information",
 ]
 
 

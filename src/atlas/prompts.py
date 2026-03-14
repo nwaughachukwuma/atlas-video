@@ -140,11 +140,12 @@ and notable attributes/states.
   'A brown cat (ginger tabby, short-haired) perched on a wooden windowsill, tail
   curled around paws, gazing outward through slightly open glass panes'.
 - List key entities, their attributes, and salient visual features.
+- Capture and describe faces, brands, objects, and landmarks.
 - For creative/instructional content: describe the WORK BEING CREATED or MODIFIED
-  and how it changes or evolves during throughout
+  and how it changes or evolves over time
 - For demonstrations or tutorials: identify tools, materials, and supplies being
   used or prepared
-- Track visible changes, progressions, or developments in the scene e.g.,
+- Track visible changes, developments, or progressions in a scene e.g.,
   "canvas transitions from blank white to having blue wash in upper portion"
 - Note spatial composition and how elements are positioned or arranged""",
         "visual_cues",
@@ -171,7 +172,7 @@ interpersonal dynamics.
     ),
     VideoPrompt(
         """Detail production elements: camera movements (pan, zoom, static), scene
-transitions, overlays (text, logos, graphics), lighting conditions (bright, dim,
+transitions, OCRs and overlays (text, logos, graphics), lighting conditions (bright, dim,
 dramatic shadows), weather, time of day, indoor/outdoor setting, background
 ambiance, and overall mood/atmosphere.
 - Capture stylistic choices (e.g., slow-mo, color grading). Detail lighting
@@ -183,6 +184,7 @@ ambiance, and overall mood/atmosphere.
   provide context
 - Setting and atmosphere: indoor/outdoor, formal/casual, studio/on-location
 - Overall mood or tone conveyed through visual styling
+- OCRs, overlay and on-screen text
 """,
         "contextual_information",
     ),
