@@ -26,11 +26,11 @@ class TextEmbedding:
         """
         from google.genai import types
 
-        from .gemini_client import gemini_client
+        from .gemini_client import get_gemini_aio_client
         from .settings import settings
 
         try:
-            result = await gemini_client.aio.models.embed_content(
+            result = await get_gemini_aio_client().models.embed_content(
                 model=settings.embedding_model,
                 contents=self.content,
                 config=types.EmbedContentConfig(

@@ -86,7 +86,7 @@ class VideoProcessor(MediaFileManager, GeminiMediaEngine):
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> bool:
-        return True
+        return False
 
     @process_time()
     async def process(

@@ -57,12 +57,18 @@ docker-push:
 	@echo "✅ Pushed $(IMAGE):$(VERSION) ($(PLATFORM))"
 
 # Run atlas with API keys from the local shell environment
-# Usage: make docker-run CMD="extract /data/video.mp4"
 docker-run:
 	docker run --rm -it \
-		-e GEMINI_API_KEY="$${GEMINI_API_KEY}" \
-		-e GROQ_API_KEY="$${GROQ_API_KEY}" \
-		-e ENABLE_LOGGING="$${ENABLE_LOGGING:-false}" \
+		-p 8000:8000 \
+		--env-file=.env \
+		-v atlas-data:/home/atlas/.atlas \
+		atlas-video-x1:latest
+
+# Usage: make docker-run CMD="extract /data/video.mp4"
+docker-run-cmd:
+	docker run --rm -it \
+		-p 8000:8000 \
+		--env-file=.env \
 		-v atlas-data:/home/atlas/.atlas \
 		$(IMAGE):latest $(CMD)
 

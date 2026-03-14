@@ -19,8 +19,11 @@ class Settings(BaseSettings):
     openrouter_api_key: str = ""
 
     # Model names
-    gemini_model: str = "gemini-2.5-flash-lite"
+    gemini_model: str = "gemini-3.1-flash-lite-preview"
+    gemini_fallback_model: str = "gemini-2.5-flash-lite"
     qwen_model: str = "qwen/qwen3-vl-30b-a3b-instruct"
+    qwen_fallback_model: str = ""
+
     embedding_model: str = "gemini-embedding-001"
     whisper_models: list[WhisperModel] = ["whisper-large-v3-turbo", "whisper-large-v3"]
 
@@ -41,8 +44,7 @@ class Settings(BaseSettings):
     @property
     def zvec_store_root(self) -> Path:
         """Get absolute path to zvec store root directory"""
-        p = Path(self.atlas_home)
-        return p / "index"
+        return Path(self.atlas_home) / "index"
 
 
 settings = Settings()

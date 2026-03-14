@@ -111,7 +111,14 @@ def mock_embedding():
 @pytest.fixture
 def mock_gemini_client():
     """Mock the Gemini client"""
-    with patch("atlas.gemini_client.gemini_client") as mock:
+    with (
+        patch("atlas.gemini_client.get_gemini_client") as mock_get_client,
+        patch("atlas.gemini_client.get_gemini_aio_client") as mock_get_aio_client,
+    ):
+        mock = MagicMock()
+        mock.aio = MagicMock()
+        mock_get_client.return_value = mock
+        mock_get_aio_client.return_value = mock.aio
         yield mock
 
 

@@ -2,6 +2,8 @@
 Unit tests for atlas.video_processor module
 """
 
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
 
 from atlas.utils import VideoAttrAnalysis
@@ -109,3 +111,36 @@ class TestVideoProcessor:
         async with VideoProcessor(config) as processor:
             assert processor is not None
             assert processor.video_path == str(video_path)
+
+    @pytest.mark.asyncio
+    async def test_context_manager_does_not_suppress_exceptions(self, tmp_path, mock_gemini_client):
+        """Test VideoProcessor context manager propagates exceptions."""
+        video_path = tmp_path / "test_video.mp4"
+        video_path.touch()
+
+        config = VideoProcessorConfig(video_path=str(video_path))
+
+        with pytest.raises(RuntimeError, match="boom"):
+            async with VideoProcessor(config):
+                raise RuntimeError("boom")
+
+    @pytest.mark.asyncio
+    async def test_analyze_chunk_content_falls_back_on_transcript_error(
+        self, tmp_path, monkeypatch, mock_gemini_client
+    ):
+        """Test transcript failures produce an empty transcript attribute."""
+        video_path = tmp_path / "test_video.mp4"
+        video_path.touch()
+
+        config = VideoProcessorConfig(video_path=str(video_path))
+        processor = VideoProcessor(config)
+        processor.describe_media_from_file = AsyncMock(return_value=MagicMock(_to_attr_list=lambda: []))
+
+        async def _raise_transcript_error(_chunk_path):
+            raise RuntimeError("transcript failed")
+
+        monkeypatch.setattr("atlas.video_processor.get_video_transcript", _raise_transcript_error)
+
+        result = await processor.analyze_chunk_content(MagicMock(), str(video_path))
+
+        assert result == [VideoAttrAnalysis(value="", attr="transcript")]

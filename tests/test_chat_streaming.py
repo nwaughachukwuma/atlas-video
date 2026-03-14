@@ -145,7 +145,7 @@ class TestStreamResponse:
         """_stream_response yields .text from each Gemini chunk."""
         chunks = [self._make_chunk("Hello"), self._make_chunk(" world")]
         mock_gemini_client = mock_gemini_client_with_chunks(chunks)
-        with patch("atlas.chat_handler.gemini_client", mock_gemini_client, create=True):
+        with patch("atlas.gemini_client.get_gemini_aio_client", return_value=mock_gemini_client.aio):
             result = [
                 chunk
                 async for chunk in _stream_response(
@@ -169,7 +169,7 @@ class TestStreamResponse:
         ]
         mock_gemini_client = mock_gemini_client_with_chunks(chunks)
         with (
-            patch("atlas.chat_handler.gemini_client", mock_gemini_client, create=True),
+            patch("atlas.gemini_client.get_gemini_aio_client", return_value=mock_gemini_client.aio),
         ):
             result = [
                 chunk

@@ -6,42 +6,42 @@ from __future__ import annotations
 
 import asyncio
 import os
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from google import genai
 
 from .prompts import VideoAnalysisSchema
+from .settings import settings
 from .utils import RetryConfig, logger, process_time, retry
 
 if TYPE_CHECKING:
     from google.genai import types as genai_types
 
 
-Model = Literal[
-    "gemini-2.5-flash-lite",
-    "gemini-2.5-flash",
-    "gemini-2.5-pro",
-    "gemini-3-flash-preview",
-    "gemini-3.1-flash-lite-preview",
-    "gemini-3.1-pro-preview",
-]
-
-
 api_key = os.environ["GEMINI_API_KEY"]
-gemini_client = genai.Client(api_key=api_key)
+
+
+def get_gemini_client() -> genai.Client:
+    """Create a Gemini client for the current call site."""
+    return genai.Client(api_key=api_key)
+
+
+def get_gemini_aio_client():
+    """Return an async Gemini client bound to a fresh underlying client."""
+    return get_gemini_client().aio
 
 
 class GeminiMediaEngine:
     """Engine for analyzing media using Gemini"""
 
     def __init__(self):
-        self.client = gemini_client
+        pass
 
     @process_time()
     @retry(RetryConfig(max_retries=2, delay=5, backoff=1.5))
     async def upload_file_async(self, file_path: str) -> "genai_types.File":
         """Upload a file to Gemini asynchronously"""
-        return await self.client.aio.files.upload(file=file_path)
+        return await get_gemini_aio_client().files.upload(file=file_path)
 
     @process_time()
     @retry(RetryConfig(max_retries=2, delay=5, backoff=1.5))
@@ -82,7 +82,7 @@ class GeminiMediaEngine:
 
         @retry(RetryConfig(max_retries=1, delay=3, backoff=1.5))
         async def _handler(model_name: str) -> VideoAnalysisSchema:
-            response = await self.client.aio.models.generate_content(
+            response = await get_gemini_aio_client().models.generate_content(
                 model=model_name,
                 contents=[file_part, prompt],
                 config=types.GenerateContentConfig(
@@ -93,31 +93,30 @@ class GeminiMediaEngine:
                     response_schema=VideoAnalysisSchema.model_json_schema(),
                 ),
             )
-
             if not response.text:
                 raise ValueError("Error describing media using Gemini")
+
             return VideoAnalysisSchema.model_validate_json(response.text)
 
         try:
-            return await _handler("gemini-3.1-flash-lite-preview")
+            return await _handler(settings.gemini_model)
         except Exception as e:
-            logger.error(f"Error with gemini-3.1-flash-lite-preview: {e}. Falling back to gemini-2.5-flash-lite")
-            return await _handler("gemini-2.5-flash-lite")
+            logger.error(f"Error with {settings.gemini_model}: {e}. Falling back")
+            return await _handler(settings.gemini_fallback_model)
 
     @process_time()
     async def generate_summary(
         self,
         content: str,
         system_prompt: str,
-        model: Model = "gemini-3.1-flash-lite-preview",
     ) -> str:
         """Generate text using Gemini"""
         from google.genai import types
 
         @retry(RetryConfig(max_retries=2, delay=5, backoff=1.5))
         async def _handler() -> str:
-            response = await self.client.aio.models.generate_content(
-                model=model,
+            response = await get_gemini_aio_client().models.generate_content(
+                model=settings.gemini_model,
                 contents=[content],
                 config=types.GenerateContentConfig(
                     temperature=0.25,

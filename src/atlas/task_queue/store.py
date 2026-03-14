@@ -279,6 +279,7 @@ class RunStore(_SQLiteStoreBase):
             )
 
     def mark_running(self, run_id: str) -> None:
+        """mark running"""
         with self._tx() as conn:
             conn.execute(
                 "UPDATE runs SET status=?, started_at=? WHERE id=?",
@@ -295,6 +296,7 @@ class RunStore(_SQLiteStoreBase):
         user_output_path: str | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> None:
+        """mark completed"""
         with self._tx() as conn:
             conn.execute(
                 "UPDATE runs SET status=?, finished_at=?, output_path=COALESCE(?, output_path), "
@@ -324,6 +326,7 @@ class RunStore(_SQLiteStoreBase):
         user_output_path: str | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> None:
+        """mark failed"""
         with self._tx() as conn:
             conn.execute(
                 "UPDATE runs SET status=?, finished_at=?, error=?, output_path=COALESCE(?, output_path), "
@@ -353,6 +356,7 @@ class RunStore(_SQLiteStoreBase):
         log_path: str | None = None,
         user_output_path: str | None = None,
     ) -> None:
+        """mark timeout"""
         with self._tx() as conn:
             conn.execute(
                 "UPDATE runs SET status=?, finished_at=?, error=?, output_path=COALESCE(?, output_path), "
@@ -371,6 +375,7 @@ class RunStore(_SQLiteStoreBase):
             )
 
     def get(self, run_id: str) -> Optional[dict]:
+        """get"""
         row = self._conn().execute("SELECT * FROM runs WHERE id=?", (run_id,)).fetchone()
         return self._decode_row(row)
 
@@ -382,6 +387,7 @@ class RunStore(_SQLiteStoreBase):
         mode: str | None = None,
         limit: int | None = None,
     ) -> List[dict]:
+        """list all"""
         clauses: list[str] = []
         params: list[Any] = []
         if status:
