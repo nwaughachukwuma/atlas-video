@@ -292,7 +292,7 @@ class VideoIndex(BaseCollection):
             logger.error(f"Error querying video_index: {e}")
             return []
 
-        return [
+        result = [
             SearchResult(
                 id=r.id,
                 score=r.score or 0,
@@ -304,6 +304,7 @@ class VideoIndex(BaseCollection):
             )
             for r in results
         ]
+        return sorted(result, key=lambda v: v.score, reverse=True)
 
     def get_video_data(self, video_id: str) -> Optional[dict]:
         """Retrieve all indexed data for *video_id* in extract-command shape.
