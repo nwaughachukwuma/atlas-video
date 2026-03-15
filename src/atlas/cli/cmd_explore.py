@@ -104,7 +104,7 @@ def cmd_list_videos(args: argparse.Namespace) -> None:
 
     from ..vector_store.video_index import default_video_index
 
-    vi = default_video_index()
+    vi = default_video_index(read_only=True)
     videos = vi.list_videos()
     print(
         json.dumps(
@@ -131,14 +131,11 @@ def cmd_list_chat(args: argparse.Namespace) -> None:
     video_id: str = args.video_id
     with make_progress() as progress:
         task = progress.add_task("Loading chat history...", total=None)
-        vc = default_video_chat()
+        vc = default_video_chat(read_only=True)
         history = vc.get_history(video_id, last_n=args.last_n)
         progress.update(task, completed=True)
 
-    output = {
-        "count": len(history),
-        "messages": history,
-    }
+    output = {"count": len(history), "messages": history}
     print(json.dumps(output, indent=2))
 
 
@@ -156,8 +153,8 @@ def cmd_stats(args: argparse.Namespace) -> None:
     console = get_console()
     with make_progress() as progress:
         task = progress.add_task("Loading stats...", total=None)
-        vi = default_video_index()
-        vc = default_video_chat()
+        vi = default_video_index(read_only=True)
+        vc = default_video_chat(read_only=True)
         progress.update(task, completed=True)
 
     output = {
@@ -187,7 +184,7 @@ def cmd_get_data(args: argparse.Namespace) -> None:
 
     with make_progress() as progress:
         task = progress.add_task("Fetching video data…", total=None)
-        vi = default_video_index()
+        vi = default_video_index(read_only=True)
         data = vi.get_video_data(video_id)
         progress.update(task, completed=True)
 

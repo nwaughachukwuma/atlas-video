@@ -273,6 +273,14 @@ class TestVideoIndex:
 
         vi = default_video_index()
         assert vi.col_path == settings.zvec_store_root / "video_index"
+        assert vi.read_only is False
+
+    def testdefault_video_index_helper_read_only(self):
+        from src.atlas.settings import settings
+
+        vi = default_video_index(read_only=True)
+        assert vi.col_path == settings.zvec_store_root / "video_index"
+        assert vi.read_only is True
 
     def test_collection_reuses_shared_handle(self, tmp_path):
         shared = MagicMock()
@@ -290,6 +298,28 @@ class TestVideoIndex:
 
         open_collection.assert_called_once()
 
+    def test_collection_separates_read_only_and_writer_handles(self, tmp_path):
+        read_shared = MagicMock()
+        write_shared = MagicMock()
+        with (
+            patch.object(BaseCollection, "_init_zvec", return_value=None),
+            patch.object(VideoIndex, "_build_schema", return_value=MagicMock()),
+            patch.dict("src.atlas.vector_store.base._collection_cache", {}, clear=True),
+            patch(
+                "src.atlas.vector_store.base.get_or_create_collection",
+                side_effect=[read_shared, write_shared],
+            ) as open_collection,
+        ):
+            reader = VideoIndex(col_path=tmp_path / "video_index", read_only=True)
+            writer = VideoIndex(col_path=tmp_path / "video_index")
+
+            assert reader.collection is read_shared
+            assert writer.collection is write_shared
+
+        assert open_collection.call_count == 2
+        assert open_collection.call_args_list[0].kwargs["read_only"] is True
+        assert open_collection.call_args_list[1].kwargs["read_only"] is False
+
 
 class TestBaseCollectionHelpers:
     def test_get_or_create_collection_creates_for_empty_existing_directory(self, tmp_path):
@@ -305,6 +335,26 @@ class TestBaseCollectionHelpers:
         assert result is created
         fake_zvec.open.assert_not_called()
         fake_zvec.create_and_open.assert_called_once()
+
+    def test_get_or_create_collection_opens_read_only_when_requested(self, tmp_path):
+        collection_path = tmp_path / "video_index"
+        collection_path.mkdir()
+        (collection_path / "existing").write_text("initialized")
+
+        fake_zvec = MagicMock()
+        opened = MagicMock()
+        fake_zvec.open.return_value = opened
+
+        # Mock the CollectionOption class
+        fake_option = MagicMock(read_only=True)
+        fake_zvec.CollectionOption.return_value = fake_option
+
+        with patch.dict("sys.modules", {"zvec": fake_zvec}):
+            result = get_or_create_collection(str(collection_path), MagicMock(), read_only=True)
+
+        assert result is opened
+        fake_zvec.open.assert_called_once_with(path=str(collection_path), option=fake_option)
+        fake_zvec.create_and_open.assert_not_called()
 
     def test_get_or_create_collection_raises_without_deleting_existing_path(self, tmp_path):
         collection_path = tmp_path / "video_index"
@@ -393,6 +443,14 @@ class TestVideoChat:
 
         vc = default_video_chat()
         assert vc.col_path == settings.zvec_store_root / "video_chat"
+        assert vc.read_only is False
+
+    def testdefault_video_chat_helper_read_only(self):
+        from src.atlas.settings import settings
+
+        vc = default_video_chat(read_only=True)
+        assert vc.col_path == settings.zvec_store_root / "video_chat"
+        assert vc.read_only is True
 
     def test_uuid(self, tmp_path):
         vc = VideoChat(col_path=tmp_path / "video_chat")

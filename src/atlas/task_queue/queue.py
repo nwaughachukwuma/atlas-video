@@ -49,7 +49,7 @@ class TaskQueue:
         # and fires a system notification on completion/failure.
     """
 
-    def __init__(self, *, db_path: Path | None = None) -> None:
+    def __init__(self, *, db_path: Path | None = None):
         self._store = TaskStore(db_path) if db_path else TaskStore()
         from ..settings import settings
 

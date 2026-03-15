@@ -66,7 +66,7 @@ CREATE INDEX IF NOT EXISTS idx_runs_mode ON runs(mode);
 class _SQLiteStoreBase:
     """Base SQLite store with WAL-enabled thread-local connections."""
 
-    def __init__(self, db_path: Path | None = None) -> None:
+    def __init__(self, db_path: Path | None = None):
         self.db_path = db_path or DB_PATH
         self._local = threading.local()
         self.db_path.parent.mkdir(parents=True, exist_ok=True)

@@ -40,7 +40,7 @@ async def chat_with_video(
     Yields:
         Incremental text chunks from the model.
     """
-    vi = default_video_index()
+    vi = default_video_index(read_only=True)
     vc = default_video_chat()
 
     # 1. Multimodal context from video segments
@@ -70,6 +70,7 @@ async def chat_with_video(
     answer = "".join(answer_parts)
     if not answer.strip():
         raise ValueError("Empty response from Gemini")
+
     await vc.record_turn(video_id, "user", query)
     await vc.record_turn(video_id, "assistant", answer)
 

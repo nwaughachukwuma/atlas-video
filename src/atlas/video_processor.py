@@ -85,8 +85,8 @@ class VideoProcessor(MediaFileManager, GeminiMediaEngine):
     async def __aenter__(self) -> "VideoProcessor":
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> bool:
-        return False
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        return None
 
     @process_time()
     async def process(
@@ -190,7 +190,8 @@ class VideoProcessor(MediaFileManager, GeminiMediaEngine):
                 description = await get_video_transcript(chunk_path)
             except Exception as e:
                 logger.error(f"Error getting video chunk analysis: {e}")
-            return VideoAttrAnalysis(value=description or "", attr="transcript")
+                description = ""
+            return VideoAttrAnalysis(value=description, attr="transcript")
 
         result0, result1 = await asyncio.gather(_attrs_handler(), _transcription_handler())
         return [*result0, result1]

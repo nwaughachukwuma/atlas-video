@@ -32,7 +32,7 @@ from ..run_history import build_benchmark_summary
 logger = get_logger("atlas:worker")
 
 
-def _trigger_dispatch() -> None:
+def _trigger_dispatch():
     """Attempt to start the next pending task after a worker slot opens."""
     try:
         from .queue import get_queue

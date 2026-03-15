@@ -68,7 +68,7 @@ class BenchmarkRegistry:
     _global: "BenchmarkRegistry | None" = None
     _cls_lock = threading.Lock()
 
-    def __init__(self) -> None:
+    def __init__(self):
         self._times: dict[str, list[float]] = defaultdict(list)
         self._lock = threading.Lock()
 

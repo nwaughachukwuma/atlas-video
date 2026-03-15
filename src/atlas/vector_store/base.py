@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 _zvec_init_lock = threading.Lock()
 _zvec_initialized = False
 _collection_lock = threading.Lock()
-_collection_cache: dict[str, "Collection"] = {}
+_collection_cache: dict[tuple[str, bool], "Collection"] = {}
 
 
 # ---------------------------------------------------------------------------
@@ -37,7 +37,12 @@ _collection_cache: dict[str, "Collection"] = {}
 # ---------------------------------------------------------------------------
 
 
-def get_or_create_collection(path: str, schema: "CollectionSchema") -> "Collection":
+def get_or_create_collection(
+    path: str,
+    schema: "CollectionSchema",
+    *,
+    read_only=False,
+) -> "Collection":
     """Open an existing zvec collection or create a new one at *path*."""
     import zvec
 
@@ -45,26 +50,43 @@ def get_or_create_collection(path: str, schema: "CollectionSchema") -> "Collecti
 
     p = Path(path)
     if not p.exists() or (p.is_dir() and not any(p.iterdir())):
-        return zvec.create_and_open(path=path, schema=schema)
+        return zvec.create_and_open(
+            path=path,
+            schema=schema,
+            option=zvec.CollectionOption(read_only=read_only),
+        )
     try:
-        return zvec.open(path=path)
+        return zvec.open(
+            path=path,
+            option=zvec.CollectionOption(read_only=read_only),
+        )
     except Exception as e:
         logger.warning("Error in zvec.open %s - path: %s", e, path)
         raise RuntimeError(f"Unable to open zvec collection at {path}") from e
 
 
-def get_shared_collection(path: str, schema: "CollectionSchema") -> "Collection":
+def get_shared_collection(
+    path: str,
+    schema: "CollectionSchema",
+    *,
+    read_only=False,
+) -> "Collection":
     """Return a process-global zvec collection handle for *path*."""
-    cached = _collection_cache.get(path)
+    cache_key = (path, read_only)
+    cached = _collection_cache.get(cache_key)
     if cached is not None:
         return cached
 
     with _collection_lock:
-        cached = _collection_cache.get(path)
+        cached = _collection_cache.get(cache_key)
         if cached is not None:
             return cached
-        _collection_cache[path] = get_or_create_collection(path=path, schema=schema)
-        return _collection_cache[path]
+        _collection_cache[cache_key] = get_or_create_collection(
+            path=path,
+            schema=schema,
+            read_only=read_only,
+        )
+        return _collection_cache[cache_key]
 
 
 def make_vector_query(embedding: List[float]):
@@ -103,8 +125,9 @@ class BaseCollection(ABC):
         col_path: Directory path for this collection.
     """
 
-    def __init__(self, col_path: Path) -> None:
+    def __init__(self, col_path: Path, *, read_only=False):
         self.col_path = col_path
+        self.read_only = read_only
         self._collection: Optional["Collection"] = None
         self._init_zvec()
 
@@ -145,6 +168,7 @@ class BaseCollection(ABC):
             self._collection = get_shared_collection(
                 str(self.col_path),
                 self._build_schema(),
+                read_only=self.read_only,
             )
         return self._collection
 

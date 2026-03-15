@@ -269,9 +269,12 @@ class VideoChat(BaseCollection):
         ]
 
 
-@lru_cache(maxsize=16)
-def default_video_chat() -> VideoChat:
+@lru_cache(maxsize=32)
+def default_video_chat(*, read_only=False) -> VideoChat:
     """Return a VideoChat object"""
     from ..settings import settings
 
-    return VideoChat(col_path=settings.zvec_store_root / COLLECTION_NAME)
+    return VideoChat(
+        col_path=settings.zvec_store_root / COLLECTION_NAME,
+        read_only=read_only,
+    )

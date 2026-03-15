@@ -260,7 +260,7 @@ def create_app() -> FastAPI:
     def list_videos() -> dict[str, Any]:
         from .vector_store.video_index import default_video_index
 
-        vi = default_video_index()
+        vi = default_video_index(read_only=True)
         videos = vi.list_videos()
         return {
             "count": len(videos),
@@ -271,20 +271,17 @@ def create_app() -> FastAPI:
     def list_chat(video_id: str, last_n: int = 20) -> dict[str, Any]:
         from .vector_store.video_chat import default_video_chat
 
-        vc = default_video_chat()
+        vc = default_video_chat(read_only=True)
         history = vc.get_history(video_id, last_n=last_n)
-        return {
-            "count": len(history),
-            "messages": history,
-        }
+        return {"count": len(history), "messages": history}
 
     @app.get("/stats")
     def stats() -> dict[str, Any]:
         from .vector_store.video_chat import default_video_chat
         from .vector_store.video_index import default_video_index
 
-        vi = default_video_index()
-        vc = default_video_chat()
+        vi = default_video_index(read_only=True)
+        vc = default_video_chat(read_only=True)
         return {
             "video_col_path": str(vi.col_path),
             "video_index_stats": str(vi.stats),
@@ -297,7 +294,7 @@ def create_app() -> FastAPI:
     def get_video(video_id: str) -> dict[str, Any]:
         from .vector_store.video_index import default_video_index
 
-        vi = default_video_index()
+        vi = default_video_index(read_only=True)
         data = vi.get_video_data(video_id)
         if not data:
             raise HTTPException(status_code=404, detail=f"No data found for video_id={video_id}")
